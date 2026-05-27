@@ -47,17 +47,20 @@ type CardPhase = 'fact' | 'question' | 'result'
 
 // ─── Phone-frame card shell ──────────────────────────────────────────────────
 // Mobile : 4:3 image stacked above content, max-w-md
-// Desktop: portrait phone frame (390px wide, ~100dvh tall), image fills top 55%,
-//          content panel occupies bottom 45%
+// Desktop: portrait phone frame (390px wide, ~100dvh tall), image fills top 45%,
+//          content panel occupies bottom 55%. Action button is always pinned to
+//          the bottom of the content panel, outside the scrollable body area.
 function CardShell({
   sourceUrl,
   borderOverride,
   progress,
+  action,
   children,
 }: {
   sourceUrl: string
   borderOverride?: string
   progress?: ReactNode
+  action?: ReactNode
   children: ReactNode
 }) {
   const border = borderOverride ?? 'border-2 border-border shadow-[4px_4px_0px_0px_black]'
@@ -66,17 +69,14 @@ function CardShell({
       className={[
         'bg-card overflow-hidden flex flex-col',
         border,
-        // Mobile: normal card
         'w-full max-w-md',
-        // Desktop: phone-frame portrait
         'lg:w-[390px] lg:max-w-none lg:h-[calc(100dvh-4rem)] lg:max-h-[820px]',
       ].join(' ')}
     >
-      {/* Image — 4:3 on mobile, top 55% on desktop */}
-      <div className="aspect-[4/3] lg:aspect-auto lg:h-[55%] shrink-0 overflow-hidden relative">
+      {/* Image — 4:3 on mobile, top 45% on desktop */}
+      <div className="aspect-[4/3] lg:aspect-auto lg:h-[45%] shrink-0 overflow-hidden relative">
         <WikipediaImage sourceUrl={sourceUrl} className="w-full h-full" />
 
-        {/* Progress badge overlaid on image — desktop only */}
         {progress && (
           <div className="absolute top-3 left-3 hidden lg:flex items-center gap-1.5 bg-black/60 px-2 py-1">
             {progress}
@@ -84,8 +84,13 @@ function CardShell({
         )}
       </div>
 
-      {/* Content panel — scrollable on desktop if needed */}
-      <div className="flex-1 lg:h-[45%] p-6 space-y-4 overflow-y-auto">{children}</div>
+      {/* Content panel: scrollable body + pinned action */}
+      <div className="flex-1 lg:h-[55%] flex flex-col overflow-hidden p-6 gap-4">
+        {/* Scrollable body — grows, scrolls if content overflows */}
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-4">{children}</div>
+        {/* Action button — always pinned to bottom */}
+        {action && <div className="shrink-0">{action}</div>}
+      </div>
     </div>
   )
 }
@@ -160,7 +165,18 @@ export function WelcomeClient() {
         <div className="lg:hidden">{progressBadge}</div>
 
         {cardPhase === 'fact' && (
-          <CardShell sourceUrl={card.sourceUrl} progress={progressBadge}>
+          <CardShell
+            sourceUrl={card.sourceUrl}
+            progress={progressBadge}
+            action={
+              <button
+                onClick={() => setCardPhase('question')}
+                className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border`}
+              >
+                Mulai Menjawab <ChevronRight className="inline h-4 w-4" />
+              </button>
+            }
+          >
             <p className="font-serif italic text-base leading-relaxed">{card.fact}</p>
             <a
               href={card.sourceUrl}
@@ -170,12 +186,6 @@ export function WelcomeClient() {
             >
               Sumber Wikipedia
             </a>
-            <button
-              onClick={() => setCardPhase('question')}
-              className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border`}
-            >
-              Mulai Menjawab <ChevronRight className="inline h-4 w-4" />
-            </button>
           </CardShell>
         )}
 
@@ -200,6 +210,15 @@ export function WelcomeClient() {
             sourceUrl={card.sourceUrl}
             progress={progressBadge}
             borderOverride={selectedAnswer === card.correctIndex ? BORDER_CORRECT : BORDER_WRONG}
+            action={
+              <button
+                onClick={handleNext}
+                className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border`}
+              >
+                {cardIndex < TUTORIAL_CARDS.length - 1 ? 'Kartu Berikutnya' : 'Lihat Hasilnya'}{' '}
+                <ChevronRight className="inline h-4 w-4" />
+              </button>
+            }
           >
             <p className="font-sans font-bold text-base">
               {selectedAnswer === card.correctIndex ? '✓ Bener!' : '✗ Salah'}
@@ -208,13 +227,6 @@ export function WelcomeClient() {
               Jawaban:{' '}
               <span className="text-foreground font-bold">{card.options[card.correctIndex]}</span>
             </p>
-            <button
-              onClick={handleNext}
-              className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border`}
-            >
-              {cardIndex < TUTORIAL_CARDS.length - 1 ? 'Kartu Berikutnya' : 'Lihat Hasilnya'}{' '}
-              <ChevronRight className="inline h-4 w-4" />
-            </button>
           </CardShell>
         )}
       </div>
