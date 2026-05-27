@@ -1,3 +1,9 @@
+import FeedClient from '@/components/FeedClient'
+
 export default function FeedPage() {
-  return <h1>Feed</h1>
+  return (
+    <div className="flex justify-center lg:justify-start lg:px-8">
+      <FeedClient />
+    </div>
+  )
 }
