@@ -20,7 +20,7 @@ export const SideNav: FC<SideNavProps> = ({ className }) => {
 
   return (
     <aside
-      className={`fixed left-0 top-0 bottom-0 w-60 z-40 bg-background border-r-2 border-border flex-col justify-between ${className ?? ''}`}
+      className={`fixed left-0 top-0 bottom-0 w-1/4 z-40 bg-background border-r-2 border-border flex-col justify-between ${className ?? ''}`}
     >
       <div className="flex flex-col flex-1 p-4">
         <div className="mb-8 p-2">

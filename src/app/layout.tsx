@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <GuestBannerPortal />
           <div className="flex min-h-screen">
             <SideNav className="hidden lg:flex" />
-            <main className="flex-1 lg:pl-60 pb-20 lg:pb-0 min-h-screen">
+            <main className="flex-1 lg:pl-[25%] pb-20 lg:pb-0 min-h-screen">
               {children}
             </main>
           </div>
