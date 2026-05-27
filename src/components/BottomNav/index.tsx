@@ -9,9 +9,9 @@ interface BottomNavProps {
 }
 
 const links = [
-  { href: '/feed', label: 'Feed', icon: Home },
-  { href: '/achievements', label: 'Achievements', icon: Trophy },
-  { href: '/profile', label: 'Profile', icon: User2 },
+  { href: '/feed', label: 'Gabutin', icon: Home },
+  { href: '/achievements', label: 'Lencana', icon: Trophy },
+  { href: '/profile', label: 'Profil Gue', icon: User2 },
 ]
 
 export const BottomNav: FC<BottomNavProps> = ({ className }) => {
