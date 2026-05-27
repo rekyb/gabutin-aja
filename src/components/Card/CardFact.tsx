@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, type FC } from 'react'
+import type { FC } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { CardShell } from '@/components/CardShell'
 import { BUTTON_PRESS } from '@/lib/design-tokens'
@@ -11,11 +11,6 @@ export interface CardFactProps {
 }
 
 export const CardFact: FC<CardFactProps> = ({ card, onReady }) => {
-  useEffect(() => {
-    const timer = setTimeout(onReady, 5000)
-    return () => clearTimeout(timer)
-  }, [card, onReady])
-
   return (
     <CardShell
       sourceUrl={card.sourceUrl}
