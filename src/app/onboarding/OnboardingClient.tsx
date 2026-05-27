@@ -9,9 +9,9 @@ import { validateDisplayName, DISPLAY_NAME_MAX_LENGTH } from '@/utils/validators
 import type { ThemeName } from '@/types'
 
 interface Props {
-  userId: string
-  defaultDisplayName: string
-  uniqueUserId: string
+  readonly userId: string
+  readonly defaultDisplayName: string
+  readonly uniqueUserId: string
 }
 
 export function OnboardingClient({ userId, defaultDisplayName, uniqueUserId }: Props) {

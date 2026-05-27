@@ -1,7 +1,6 @@
 'use client'
 import { FC, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { getUniqueUserId, isGuestOnly } from '@/lib/guest-state'
+import { getUniqueUserId } from '@/lib/guest-state'
 import { getUserByUniqueId } from '@/app/actions/user'
 import { CARD_BASE, BUTTON_PRESS, XP_BAR_TRACK, XP_BAR_FILL } from '@/lib/design-tokens'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -21,8 +20,47 @@ interface UserSessionData {
   } | null
 }
 
+type DisplayUser = {
+  displayName: string
+  uniqueUserId: string
+  avatar: string | null
+  email: string | null
+  xp: number
+  level: number
+}
+
+function getDisplayUser(session: UserSessionData, guestDbUser: DisplayUser | null): DisplayUser {
+  if (session.authenticated && session.user !== null) return session.user
+  if (guestDbUser) {
+    return {
+      displayName: guestDbUser.displayName,
+      uniqueUserId: guestDbUser.uniqueUserId,
+      avatar: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${guestDbUser.uniqueUserId}`,
+      email: null,
+      xp: guestDbUser.xp,
+      level: guestDbUser.level,
+    }
+  }
+  const uid = getUniqueUserId() || '000000000'
+  return {
+    displayName: 'Guest User',
+    uniqueUserId: uid,
+    avatar: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${uid}`,
+    email: null,
+    xp: 0,
+    level: 1,
+  }
+}
+
+function handleLogout() {
+  globalThis.location.href = '/api/auth/logout'
+}
+
+function handleGoogleConnect(uniqueUserId: string) {
+  globalThis.location.href = `/api/auth/google?guest_uid=${uniqueUserId}`
+}
+
 export const ProfileClient: FC = () => {
-  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [session, setSession] = useState<UserSessionData>({ authenticated: false, user: null })
   const [guestDbUser, setGuestDbUser] = useState<any>(null)
@@ -66,39 +104,12 @@ export const ProfileClient: FC = () => {
     )
   }
 
-  // Determine user info (either from server session or fall back to local guest state)
   const isGoogleUser = session.authenticated && session.user !== null
-  const displayUser = isGoogleUser
-    ? session.user
-    : guestDbUser
-    ? {
-        displayName: guestDbUser.displayName,
-        uniqueUserId: guestDbUser.uniqueUserId,
-        avatar: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${guestDbUser.uniqueUserId}`,
-        email: null,
-        xp: guestDbUser.xp,
-        level: guestDbUser.level,
-      }
-    : {
-        displayName: 'Guest User',
-        uniqueUserId: getUniqueUserId() || '000000000',
-        avatar: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${getUniqueUserId() || '000000000'}`,
-        email: null,
-        xp: 0,
-        level: 1,
-      }
+  const displayUser = getDisplayUser(session, guestDbUser)
 
   // Flat 100 XP per level as defined in validators/formulas
-  const currentXp = displayUser!.xp % 100
-  const xpProgressPercent = currentXp // flat 100 XP means currentXp is also the percentage!
-
-  function handleLogout() {
-    window.location.href = '/api/auth/logout'
-  }
-
-  function handleGoogleConnect() {
-    window.location.href = `/api/auth/google?guest_uid=${displayUser!.uniqueUserId}`
-  }
+  const currentXp = displayUser.xp % 100
+  const xpProgressPercent = currentXp
 
   return (
     <div className="space-y-6">
@@ -112,14 +123,14 @@ export const ProfileClient: FC = () => {
         <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={displayUser!.avatar || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${displayUser!.uniqueUserId}`}
+            src={displayUser.avatar || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${displayUser.uniqueUserId}`}
             alt="Profile Avatar"
             className="w-20 h-20 border-2 border-border shrink-0 bg-background"
           />
           <div className="space-y-1 w-full min-w-0">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
               <h2 className="font-sans font-black text-2xl truncate max-w-full">
-                {displayUser!.displayName}
+                {displayUser.displayName}
               </h2>
               {isGoogleUser ? (
                 <span className="bg-primary/20 text-primary border border-primary px-2.5 py-0.5 font-mono text-[10px] font-bold flex items-center gap-1 uppercase">
@@ -132,11 +143,11 @@ export const ProfileClient: FC = () => {
               )}
             </div>
             <p className="font-mono text-xs text-muted-foreground select-all">
-              ID: #{displayUser!.uniqueUserId}
+              ID: #{displayUser.uniqueUserId}
             </p>
-            {isGoogleUser && displayUser!.email && (
+            {isGoogleUser && displayUser.email && (
               <p className="font-mono text-xs text-muted-foreground truncate">
-                {displayUser!.email}
+                {displayUser.email}
               </p>
             )}
           </div>
@@ -145,7 +156,7 @@ export const ProfileClient: FC = () => {
         {/* Level and XP progress */}
         <div className="space-y-2 pt-2 border-t-2 border-border/10">
           <div className="flex justify-between items-end font-mono text-xs">
-            <span className="font-black text-foreground">LEVEL {displayUser!.level}</span>
+            <span className="font-black text-foreground">LEVEL {displayUser.level}</span>
             <span className="text-muted-foreground">{currentXp} / 100 XP</span>
           </div>
           <div className={XP_BAR_TRACK}>
@@ -176,7 +187,7 @@ export const ProfileClient: FC = () => {
                 </p>
               </div>
               <button
-                onClick={handleGoogleConnect}
+                onClick={() => handleGoogleConnect(displayUser.uniqueUserId)}
                 className={`${BUTTON_PRESS} w-full bg-white text-black font-mono font-bold py-3 border-2 border-border flex items-center justify-center gap-2`}
               >
                 <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">

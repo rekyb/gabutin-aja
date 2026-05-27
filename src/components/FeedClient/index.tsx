@@ -15,7 +15,7 @@ const SLIDE_MS = 240
 function scrollableAncestor(target: EventTarget | null, root: HTMLElement | null): HTMLElement | null {
   let el = target as HTMLElement | null
   while (el && el !== root) {
-    const { overflowY } = window.getComputedStyle(el)
+    const { overflowY } = globalThis.getComputedStyle(el)
     if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) return el
     el = el.parentElement
   }
@@ -69,26 +69,25 @@ const FeedClient: FC = () => {
     return () => el.removeEventListener('wheel', handler)
   }, [])
 
+  function completeSlide() {
+    setSlideAnimated(true)
+    setSlideOffset(0)
+    setTimeout(() => { navigatingRef.current = false }, SLIDE_MS)
+  }
+
+  function enterSlide(direction: 'up' | 'down', doNav: () => void) {
+    doNav()
+    setSlideAnimated(false)
+    setSlideOffset(direction === 'down' ? 105 : -105)
+    requestAnimationFrame(() => requestAnimationFrame(completeSlide))
+  }
+
   function animateNav(direction: 'up' | 'down', doNav: () => void) {
     if (navigatingRef.current) return
     navigatingRef.current = true
-
     setSlideAnimated(true)
     setSlideOffset(direction === 'down' ? -105 : 105)
-
-    setTimeout(() => {
-      doNav()
-      setSlideAnimated(false)
-      setSlideOffset(direction === 'down' ? 105 : -105)
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setSlideAnimated(true)
-          setSlideOffset(0)
-          setTimeout(() => { navigatingRef.current = false }, SLIDE_MS)
-        })
-      })
-    }, SLIDE_MS)
+    setTimeout(() => enterSlide(direction, doNav), SLIDE_MS)
   }
 
   function handleNavUp() {
@@ -98,7 +97,7 @@ const FeedClient: FC = () => {
 
   function handleNavDown() {
     if (navigatingRef.current || phaseRef.current === 'loading') return
-    animateNav('down', () => { void goToNext() })
+    animateNav('down', () => { goToNext().catch(() => {}) })
   }
 
   navUpRef.current = handleNavUp
@@ -121,8 +120,8 @@ const FeedClient: FC = () => {
     return (
       <div className="h-[calc(100dvh-8rem)] lg:h-dvh flex flex-col items-center justify-center p-4 lg:p-6 overflow-hidden">
         <ReEngagementCard
-          onSave={() => { dismissReEngagement(); void loadCard(userId) }}
-          onDismiss={() => { dismissReEngagement(); void loadCard(userId) }}
+          onSave={() => { dismissReEngagement(); loadCard(userId).catch(() => {}) }}
+          onDismiss={() => { dismissReEngagement(); loadCard(userId).catch(() => {}) }}
         />
       </div>
     )
@@ -147,10 +146,10 @@ const FeedClient: FC = () => {
           <CardFact card={card} onReady={() => setPhase('question')} />
         )}
         {phase === 'question' && card && (
-          <CardQuestion card={card} onAnswer={(i) => void answerCard(i, false)} onExpire={() => void answerCard(null, true)} />
+          <CardQuestion card={card} onAnswer={(i) => { answerCard(i, false).catch(() => {}) }} onExpire={() => { answerCard(null, true).catch(() => {}) }} />
         )}
         {phase === 'result' && card && response && (
-          <CardResult card={card} response={response} onNext={() => animateNav('down', () => { void goToNext() })} wasTimeout={wasTimeout} />
+          <CardResult card={card} response={response} onNext={() => animateNav('down', () => { goToNext().catch(() => {}) })} wasTimeout={wasTimeout} />
         )}
       </div>
 

@@ -64,7 +64,7 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
   init: () => {
     const uid = readUserId()
     set({ userId: uid })
-    void get().loadCard(uid)
+    get().loadCard(uid).catch(() => {})
   },
 
   loadCard: async (uid) => {

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, type ReactNode } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { BookOpen, X, Check, Flame, Sparkles } from 'lucide-react'
 import { ThemePicker } from '@/components/ThemePicker'
@@ -51,6 +51,44 @@ type CardPhase = 'fact' | 'question' | 'result'
 
 const SLIDE_MS = 240
 
+function FeedbackBadge({ selected, correct }: { readonly selected: number | null; readonly correct: number }) {
+  if (selected === correct) return (
+    <span className="font-sans font-black text-sm text-primary flex items-center gap-1.5 uppercase">
+      <Check className="h-4 w-4 stroke-3" /> BENAR!
+    </span>
+  )
+  if (selected === -1) return (
+    <span className="font-sans font-black text-sm text-muted-foreground flex items-center gap-1.5 uppercase">
+      <X className="h-4 w-4 stroke-3" /> TIMEOUT!
+    </span>
+  )
+  if (selected === -2) return (
+    <span className="font-sans font-black text-sm text-muted-foreground flex items-center gap-1.5 uppercase">
+      <X className="h-4 w-4 stroke-3" /> SKIP!
+    </span>
+  )
+  if (selected !== null) return (
+    <span className="font-sans font-black text-sm text-secondary flex items-center gap-1.5 uppercase">
+      <X className="h-4 w-4 stroke-3" /> SALAH!
+    </span>
+  )
+  return null
+}
+
+function ResultMessage({ selected, correct }: { readonly selected: number; readonly correct: number }) {
+  if (selected === correct) return (
+    <>
+      <p className="font-sans font-extrabold text-3xl text-primary tracking-wide">+3 XP</p>
+      <p className="font-sans font-bold text-lg text-foreground flex items-center gap-2">
+        Nah bener! Menyala ilmu lo! <Sparkles className="h-5 w-5 text-accent fill-accent" />
+      </p>
+    </>
+  )
+  if (selected === -1) return <p className="font-sans font-bold text-lg text-foreground">Waktunya habis! Yuk fokus dikit</p>
+  if (selected === -2) return <p className="font-sans font-bold text-lg text-foreground">Di-skip nih! Jangan kebiasaan ya</p>
+  return <p className="font-sans font-bold text-lg text-foreground">Salah woi! Baca dulu nih</p>
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────
 export function WelcomeClient() {
   const router = useRouter()
@@ -98,34 +136,6 @@ export function WelcomeClient() {
 
   const card = TUTORIAL_CARDS[cardIndex]
 
-  // Feedback badge definition to avoid nested ternary operations in JSX rendering
-  let feedbackBadge: ReactNode = null
-  if (selectedAnswer === card.correctIndex) {
-    feedbackBadge = (
-      <span className="font-sans font-black text-sm text-primary flex items-center gap-1.5 uppercase">
-        <Check className="h-4 w-4 stroke-3" /> BENAR!
-      </span>
-    )
-  } else if (selectedAnswer === -1) {
-    feedbackBadge = (
-      <span className="font-sans font-black text-sm text-muted-foreground flex items-center gap-1.5 uppercase">
-        <X className="h-4 w-4 stroke-3" /> TIMEOUT!
-      </span>
-    )
-  } else if (selectedAnswer === -2) {
-    feedbackBadge = (
-      <span className="font-sans font-black text-sm text-muted-foreground flex items-center gap-1.5 uppercase">
-        <X className="h-4 w-4 stroke-3" /> SKIP!
-      </span>
-    )
-  } else if (selectedAnswer !== null) {
-    feedbackBadge = (
-      <span className="font-sans font-black text-sm text-secondary flex items-center gap-1.5 uppercase">
-        <X className="h-4 w-4 stroke-3" /> SALAH!
-      </span>
-    )
-  }
-
   function handleAnswerSelect(index: number) {
     if (cardPhase !== 'question') return
     setSelectedAnswer(index)
@@ -145,6 +155,12 @@ export function WelcomeClient() {
     setCardPhase('result')
   }
 
+  function completeTransition() {
+    setSlideAnimated(true)
+    setSlideOffset(0)
+    setTimeout(() => { navigatingRef.current = false }, SLIDE_MS)
+  }
+
   function animateTransition(doNav: () => void) {
     if (navigatingRef.current) return
     navigatingRef.current = true
@@ -154,13 +170,7 @@ export function WelcomeClient() {
       doNav()
       setSlideAnimated(false)
       setSlideOffset(105)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setSlideAnimated(true)
-          setSlideOffset(0)
-          setTimeout(() => { navigatingRef.current = false }, SLIDE_MS)
-        })
-      })
+      requestAnimationFrame(() => requestAnimationFrame(completeTransition))
     }, SLIDE_MS)
   }
 
@@ -293,35 +303,14 @@ export function WelcomeClient() {
           >
             {/* Top header bar */}
             <div className="flex justify-between items-center pb-2 border-b-2 border-border/20 font-mono text-xs mb-4">
-              {feedbackBadge}
+              <FeedbackBadge selected={selectedAnswer} correct={card.correctIndex} />
               <span className="font-sans font-bold text-foreground flex items-center gap-1">
                 Streak: <Flame className="h-4 w-4 text-secondary fill-secondary" /> {streak}
               </span>
             </div>
 
             <div className="space-y-4">
-              {selectedAnswer === card.correctIndex ? (
-                <>
-                  <p className="font-sans font-extrabold text-3xl text-primary tracking-wide">
-                    +3 XP
-                  </p>
-                  <p className="font-sans font-bold text-lg text-foreground flex items-center gap-2">
-                    Nah bener! Menyala ilmu lo! <Sparkles className="h-5 w-5 text-accent fill-accent" />
-                  </p>
-                </>
-              ) : selectedAnswer === -1 ? (
-                <p className="font-sans font-bold text-lg text-foreground">
-                  Waktunya habis! Yuk fokus dikit
-                </p>
-              ) : selectedAnswer === -2 ? (
-                <p className="font-sans font-bold text-lg text-foreground">
-                  Di-skip nih! Jangan kebiasaan ya
-                </p>
-              ) : (
-                <p className="font-sans font-bold text-lg text-foreground">
-                  Salah woi! Baca dulu nih
-                </p>
-              )}
+              <ResultMessage selected={selectedAnswer} correct={card.correctIndex} />
 
               {/* Blockquote with explanation */}
               <div className="border-l-4 border-border/40 pl-4 py-1">
@@ -354,7 +343,7 @@ export function WelcomeClient() {
           </p>
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => { window.location.href = `/api/auth/google?guest_uid=${uid}` }}
+              onClick={() => { globalThis.location.href = `/api/auth/google?guest_uid=${uid}` }}
               className={`${BUTTON_PRESS} w-full bg-white text-black font-mono font-bold py-3 border-2 border-border flex items-center justify-center`}
             >
               <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
@@ -434,7 +423,7 @@ export function WelcomeClient() {
         </div>
 
         <button
-          onClick={() => { window.location.href = `/api/auth/google?guest_uid=${uid}` }}
+          onClick={() => { globalThis.location.href = `/api/auth/google?guest_uid=${uid}` }}
           className={`${BUTTON_PRESS} w-full bg-white text-black font-mono font-bold py-3 border-2 border-border flex items-center justify-center`}
         >
           <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">

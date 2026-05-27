@@ -43,13 +43,14 @@ export function Toast() {
         <UrlToastTrigger />
       </Suspense>
       {message && (
-        <div
+        <button
+          type="button"
           onClick={dismiss}
           className={`${TOAST_POSITION} bg-card border-2 border-(--color-card-stroke) shadow-[4px_4px_0px_0px_var(--color-shadow)] p-4 flex items-center gap-3 cursor-pointer`}
         >
           <Sparkles className="h-5 w-5 shrink-0 text-primary" />
           <p className="font-sans font-bold text-sm flex-1">{message}</p>
-        </div>
+        </button>
       )}
     </>
   )
