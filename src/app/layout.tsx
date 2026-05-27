@@ -3,6 +3,8 @@ import { Montserrat, Lora, Space_Mono } from 'next/font/google'
 import { BottomNav } from '@/components/BottomNav'
 import { SideNav } from '@/components/SideNav'
 import { Providers } from './providers'
+import { ClientBootstrap } from './ClientBootstrap'
+import { GuestBannerPortal } from './GuestBannerPortal'
 import './globals.css'
 
 const montserrat = Montserrat({ subsets: ['latin'], variable: '--font-sans' })
@@ -27,6 +29,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="antialiased bg-background text-foreground">
         <Providers>
+          <ClientBootstrap />
+          <GuestBannerPortal />
           <div className="flex min-h-screen">
             <SideNav className="hidden lg:flex" />
             <main className="flex-1 lg:pl-60 pb-20 lg:pb-0 min-h-screen">
