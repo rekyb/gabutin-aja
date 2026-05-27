@@ -2,7 +2,7 @@
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { generateUniqueUserId } from '@/utils/user-id'
-import { getUniqueUserId, setUniqueUserId } from '@/lib/guest-state'
+import { getUniqueUserId, setUniqueUserId, isGuestOnly } from '@/lib/guest-state'
 import { getUserByUniqueId } from '@/app/actions/user'
 
 export function ClientBootstrap() {
@@ -22,8 +22,12 @@ export function ClientBootstrap() {
         return
       }
 
-      // Returning user: if they land on /welcome but already have a DB record, skip to /feed
+      // Returning user on /welcome: redirect to /feed if guest or registered
       if (pathname === '/welcome') {
+        if (isGuestOnly()) {
+          router.replace('/feed')
+          return
+        }
         const user = await getUserByUniqueId(uid)
         if (user) {
           router.replace('/feed')

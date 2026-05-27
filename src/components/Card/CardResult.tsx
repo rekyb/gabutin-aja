@@ -1,6 +1,6 @@
 'use client'
 import type { FC } from 'react'
-import { ArrowRight, Sparkles, X, Check, Flame } from 'lucide-react'
+import { Sparkles, X, Check, Flame } from 'lucide-react'
 import { CardShell } from '@/components/CardShell'
 import { BUTTON_PRESS, BORDER_CORRECT, BORDER_WRONG, BORDER_SKIP } from '@/lib/design-tokens'
 import type { CardDoc, SubmitAnswerResponse } from '@/types'
@@ -9,9 +9,10 @@ export interface CardResultProps {
   card: CardDoc
   response: SubmitAnswerResponse
   onNext: () => void
+  wasTimeout?: boolean
 }
 
-export const CardResult: FC<CardResultProps> = ({ card, response, onNext }) => {
+export const CardResult: FC<CardResultProps> = ({ card, response, onNext, wasTimeout = false }) => {
   const isCorrect = response.result === 'correct'
   const isWrong = response.result === 'wrong'
   const isSkip = response.result === 'skip'
@@ -29,7 +30,7 @@ export const CardResult: FC<CardResultProps> = ({ card, response, onNext }) => {
           onClick={onNext}
           className={`${BUTTON_PRESS} w-full bg-transparent text-primary font-mono font-bold py-3 border-2 border-primary hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center gap-1.5`}
         >
-          Lanjut <ArrowRight className="h-4 w-4" />
+          Lanjut
         </button>
       }
     >
@@ -46,7 +47,7 @@ export const CardResult: FC<CardResultProps> = ({ card, response, onNext }) => {
         )}
         {isSkip && (
           <span className="font-sans font-black text-sm text-muted-foreground flex items-center gap-1.5 uppercase">
-            <X className="h-4 w-4 stroke-3" /> SKIP!
+            <X className="h-4 w-4 stroke-3" /> {wasTimeout ? 'TIMEOUT!' : 'SKIP!'}
           </span>
         )}
         <span className="font-sans font-bold text-foreground flex items-center gap-1">
@@ -69,7 +70,9 @@ export const CardResult: FC<CardResultProps> = ({ card, response, onNext }) => {
           <p className="font-sans font-bold text-lg text-foreground">Salah woi! Baca dulu nih</p>
         )}
         {isSkip && (
-          <p className="font-sans font-bold text-lg text-foreground">Waktunya habis! Yuk fokus dikit</p>
+          <p className="font-sans font-bold text-lg text-foreground">
+            {wasTimeout ? 'Waktunya habis! Yuk fokus dikit' : 'Yahh di-skip'}
+          </p>
         )}
         <div className="border-l-4 border-border/40 pl-4 py-1">
           <p className="font-serif italic text-base leading-relaxed text-foreground/90">

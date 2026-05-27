@@ -13,7 +13,7 @@ export const CardNext: FC<CardNextProps> = ({ onNext }) => (
       onClick={onNext}
       className={`${BUTTON_PRESS} bg-primary text-primary-foreground font-mono font-bold py-2.5 px-5 border-2 border-border flex items-center gap-1.5`}
     >
-      Lanjut →
+      Lanjut
     </button>
     <p className="font-mono text-xs text-muted-foreground flex items-center gap-1">
       <ArrowUp className="h-3.5 w-3.5" />

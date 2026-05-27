@@ -33,13 +33,12 @@ export const CardShell: FC<CardShellProps> = ({
       className={[
         'bg-sidebar overflow-hidden flex flex-col',
         border,
-        'w-full max-w-[490px]',
-        'lg:w-[430px] lg:max-w-none lg:flex-1 lg:min-h-0 lg:max-h-[820px]',
+        'flex-1 min-h-0 w-full max-w-[490px] lg:w-[430px] lg:max-w-none',
         className ?? '',
       ].join(' ')}
     >
       <div
-        className={`${hideImage ? 'hidden' : ''} aspect-3/1 lg:aspect-auto lg:h-[45%] shrink-0 overflow-hidden relative`}
+        className={`${hideImage ? 'hidden' : ''} h-[35%] lg:h-[45%] shrink-0 overflow-hidden relative`}
       >
         <WikipediaImage sourceUrl={sourceUrl} className="w-full h-full" />
         {progress && (

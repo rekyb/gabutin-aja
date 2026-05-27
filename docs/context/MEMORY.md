@@ -6,6 +6,77 @@
 
 ## Session History
 
+### [2026-05-27] Session 11: Feed UX — Zustand, Navigation, Animation & Flow Guards
+- **Task/Epic Status:**
+  - **Task:** Feed UX Polish — state persistence, scroll/swipe nav, slide animation, full-height cards, guest/register guards
+  - **Gate 3 (QA):** Passed — vitest (54/54), tsc clean, next build clean
+  - **Status:** **DONE** — branch `feat/e04-feed-card-lifecycle`
+- **What Was Implemented:**
+  - `src/store/feedStore.ts` (NEW) — Zustand store (`useFeedStore`) holding all feed data state: `phase`, `card`, `response`, `achievements`, `cardHistory`, `historyIndex`, `userId`, `wasTimeout`, `showReEngagement`. Actions: `init`, `loadCard`, `goToPrev`, `goToNext`, `answerCard`, `setPhase`, `dismissAchievement`, `dismissReEngagement`, `reset`.
+  - `src/components/FeedClient/index.tsx` — Fully refactored to consume Zustand store. Local state reduced to animation only (`slideOffset`, `slideAnimated`). `init()` skipped if `historyIndex !== -1` so returning users keep full card history. Wheel listener uses `{ passive: false }` + `scrollableAncestor()` guard to avoid hijacking inner-card scroll. Swipe detection extended to all states (not just `result`). `animateNav(direction, doNav)` implements 3-phase slide: exit (105vh) → content swap → instant reposition → enter.
+  - Desktop up/down nav indicators — `fixed right-6 top-1/2 -translate-y-1/2`, `hidden lg:flex`, ChevronUp disabled at `historyIndex <= 0`.
+  - `src/app/feed/page.tsx` — Removed intermediate flex wrapper; renders `<FeedClient />` directly so `h-[calc(100dvh-8rem)]` fills `<main>` exactly (mirrors `welcome/page.tsx` pattern).
+  - `src/components/CardShell/index.tsx` — Simplified to `flex-1 min-h-0 w-full max-w-[490px] lg:w-[430px] lg:max-w-none`. Removed `lg:max-h-[820px]` cap. Card is always full-height adaptive — fills whatever flex container it lives in. Image stays `h-[35%] lg:h-[45%]`.
+  - `src/components/CardSkeleton/index.tsx` — Matched: `flex-1 min-h-0 w-full max-w-[490px] lg:w-[430px] lg:max-w-none`. Removed cap.
+  - `src/app/ClientBootstrap.tsx` — Added `isGuestOnly()` check: guests landing on `/welcome` are immediately redirected to `/feed` without a DB round-trip.
+  - `src/app/welcome/WelcomeClient.tsx` — On successful registration, calls `resetFeed()` before `router.push('/feed')` so the store starts fresh for the new account. Removed arrow icons from all CTA buttons (Kuis!, Lanjut, Gaskeun!, Lanjutin). "Siap Dites!" renamed to "Kuis!".
+  - `src/components/Card/CardFact.tsx`, `CardResult.tsx`, `CardQuestion.tsx`, `CardNext.tsx` — Removed ChevronRight / ArrowRight icons from all action buttons.
+- **Discoveries & Technical Insights:**
+  - `flex-1 min-h-0` on CardShell is cleaner than `h-full` — it works in any flex context without requiring the parent to have an explicit height declaration. `h-full` needs a definite parent height; `flex-1` just grows.
+  - Wheel events always bubble even when a child scrollable area handles them. The `scrollableAncestor()` guard (checking `scrollTop <= 0` / `scrollTop + clientHeight >= scrollHeight - 1`) is required to prevent page-level scroll from conflicting with inner card scroll.
+  - The `navUpRef` / `navDownRef` pattern (always-current function refs) lets a `useEffect`-registered event listener call the latest closure values without being re-attached on every render. One listener, always fresh.
+  - Removing the intermediate flex wrapper from `feed/page.tsx` (making FeedClient a direct child of `<main>`) is critical — without it, FeedClient's `w-full` had no parent width anchor and `items-center` had no room to center.
+  - Zustand's `useFeedStore.getState().reset()` (or the hook selector equivalent) is safe to call from non-feed components (WelcomeClient) because Zustand stores are module-level singletons — no Provider required.
+- **Patterns (What Worked Well):**
+  - Keeping slide animation state (`slideOffset`, `slideAnimated`) in the component rather than the store keeps the store pure data and makes the animation independently testable/tweakable.
+  - The `historyIndex === -1` guard for `init()` is the correct idiom for "initialize once, preserve on re-visit" — cleaner than checking `card === null`.
+- **Anti-Patterns to Avoid:**
+  - Do NOT use `h-full` on flex children unless you are certain the parent has a `definite height` (explicit px/vh/% value). Prefer `flex-1 min-h-0` for grow-to-fill behavior.
+  - Do NOT register wheel/scroll listeners in React as `onWheel` for navigation — React registers them as passive by default, blocking `preventDefault()`. Always use `addEventListener('wheel', handler, { passive: false })` in a `useEffect`.
+
+### [2026-05-27] Session 10: Mobile Card Height Sizing & Test Fixes
+- **Task/Epic Status:**
+  - **Task:** Mobile Card Sizing & QA Test Fixes
+  - **Gate 3 (QA):** Passed — vitest (54/54), next build (clean compile), next lint (clean)
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - `src/components/CardShell/index.tsx` — Added explicit `h-full flex-1 min-h-0` on mobile layouts AND `lg:h-full lg:flex-1 lg:min-h-0` on desktop (`lg`) layouts. Converted the image container to use highly adaptive, proportional heights (`h-[35%] lg:h-[45%]`) rather than aspect-ratio constraints on mobile. This ensures the card actively scales to 100% of the viewport container's height on all device screens (both mobile viewports and desktop emulators/screens) and dynamically fits internal text inside the scrolling area.
+  - `src/components/CardSkeleton/index.tsx` — Synchronized wrapper and image styling classes with `CardShell` (`h-full flex-1 min-h-0 lg:h-full lg:flex-1 lg:min-h-0` on wrapper, and `h-[35%] lg:h-[45%]` on image) to prevent any layout shifts when replacing loading skeletons with the cards.
+  - `src/components/Card/CardFact.tsx` + `CardFact.test.tsx` — Restored the CTA button text to `"Kuis!"` as requested and synchronized test case assertions to search for `/kuis/i` to guarantee the test remains completely green.
+  - `src/store/feedStore.ts` + `FeedClient/index.tsx` — Added a new `wasTimeout` property to the feed store, which tracks whether a transition to the result phase was triggered by the timer expiring (`onExpire` -> `isTimeout = true`) or a manual skip.
+  - `src/components/Card/CardResult.tsx` + `CardResult.test.tsx` + `WelcomeClient.tsx` — Implemented advanced skip/timeout copy splitting. Added support for `wasTimeout` prop in `CardResult`. Render `"TIMEOUT!"` (badge) + `"Waktunya habis! Yuk fokus dikit"` (text) on timeout, and `"SKIP!"` (badge) + `"Yahh di-skip"` (text) on manual skip. Added comprehensive test coverage for both cases.
+- **Discoveries & Technical Insights:**
+  - On desktop breakpoints, if the card has `lg:max-h-[820px]` but is missing `lg:h-full lg:flex-1 lg:min-h-0`, the height collapses to `h-auto` because the desktop breakpoint overrides the mobile cascading `h-full` and `flex-1` rules in flex parent layouts. Restoring explicit desktop stretching classes guarantees it fills the full viewport height up to `820px` max height.
+  - Tracking timeout vs skip entirely in the client-side state machine/store (`wasTimeout` flag) is extremely clean and avoids extending the database schema or changing strict server action API boundaries.
+  - Sizing percentage-based (`h-[35%] lg:h-[45%]`) instead of aspect ratio containers makes image sizing completely adaptive to the device height itself, guaranteeing visual balance on both compact screen profiles and extra-tall devices.
+- **Patterns (What Worked Well):**
+  - Synchronizing the loading skeletons' layout parameters precisely with their real card shells completely eliminates content jumps during transition states.
+
+### [2026-05-27] Session 09: E04 Feed & Card Lifecycle
+- **Task/Epic Status:**
+  - **Epic:** E04 — Feed & Card Lifecycle
+  - **Gate 3 (QA):** Passed — vitest (53/53), tsc clean, next build clean, 97.5% coverage
+  - **Status:** **DONE** — PR #8 open, branch `feat/e04-feed-card-lifecycle`
+- **What Was Implemented:**
+  - `src/app/actions/feed.ts` — `getNextCard` stub cycling through 2 mock cards
+  - `src/app/actions/answer.ts` — `submitAnswer` stub (null=skip, otherwise correct)
+  - `src/components/Card/CardFact.tsx` — fact display + WikipediaImage + 5s auto-advance + "Siap Dites!" CTA
+  - `src/components/Card/CardNext.tsx` — "Lanjut →" button + swipe hint
+  - `src/components/CountdownTimer/index.tsx` — 1s-interval countdown bar with numeric display
+  - `src/components/AchievementToast/index.tsx` — fixed-position toast, rarity color on root, 3s auto-dismiss
+  - `src/components/FeedClient/index.tsx` — state machine (loading→fact→question→result), swipe-up gesture, achievement queue, guest re-engagement injection
+  - `src/app/feed/page.tsx` — Server Component shell wrapping FeedClient
+  - Test files for CardFact, CountdownTimer, AchievementToast (7 new tests)
+- **Discoveries & Technical Insights:**
+  - CountdownTimer uses 1s intervals (`setInterval(fn, 1000)`) with integer decrement. The `prev <= 1` condition in the state updater fires `onExpire()` and `clearInterval()` — this is compatible with `vi.advanceTimersByTime(N * 1000)` in fake-timer tests.
+  - WikipediaImage async fetch fires in CardFact/CardResult tests and produces `act(...)` warnings. These are benign — the AbortController fix (E02) prevents actual unhandled rejections. Suppressed by stubbing fetch to `{ ok: false, status: 404 }` in CardFact tests.
+  - FeedClient avoids `useCallback` for `loadCard` and instead passes `uid` as a parameter, sidestepping stale closure issues with `userId`. The `useEffect([userId])` dep is safe since `userId` only changes once on mount.
+- **Patterns (What Worked Well):**
+  - Keeping `loadCard(uid: string)` as a plain function (not `useCallback`) and passing `userId` via parameter keeps the state machine easy to follow without complex memoization.
+  - Separating `FeedClient` (state machine) from individual card components (CardFact, CardQuestion, CardResult) keeps each file testable in isolation.
+- **Anti-Patterns to Avoid:**
+  - Don't put inline arrow functions in `useEffect` dependency arrays — they recreate on every render and cause infinite loops. Either use `useCallback`, pass args explicitly, or suppress the ESLint warning with a comment when the omission is intentional.
+
 ### [2026-05-27] Session 08: Display Name Input Validation & Type Check Compilation Fixes
 - **Task/Epic Status:**
   - **Task:** Display Name Input Validation

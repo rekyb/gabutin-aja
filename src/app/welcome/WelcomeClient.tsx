@@ -1,16 +1,17 @@
 'use client'
-import { useState, useEffect, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, BookOpen, X, Check, Flame, Sparkles } from 'lucide-react'
+import { BookOpen, X, Check, Flame, Sparkles } from 'lucide-react'
 import { ThemePicker } from '@/components/ThemePicker'
 import { createUser } from '@/app/actions/user'
 import { generateUniqueUserId } from '@/utils/user-id'
 import { getUniqueUserId, setUniqueUserId, setGuestOnly, setGuestProgress } from '@/lib/guest-state'
-import { MCQ_OPTION, BUTTON_PRESS, BORDER_CORRECT, BORDER_WRONG } from '@/lib/design-tokens'
+import { MCQ_OPTION, BUTTON_PRESS, BORDER_CORRECT, BORDER_WRONG, BORDER_SKIP } from '@/lib/design-tokens'
 import { CircularTimer } from '@/components/CircularTimer'
 import { CardShell } from '@/components/CardShell'
 import type { ThemeName } from '@/types'
 import { validateDisplayName, DISPLAY_NAME_MAX_LENGTH } from '@/utils/validators'
+import { useFeedStore } from '@/store/feedStore'
 
 interface TutorialCard {
   fact: string
@@ -47,9 +48,12 @@ const TUTORIAL_CARDS: TutorialCard[] = [
 type Phase = 'tutorial' | 'decision' | 'register'
 type CardPhase = 'fact' | 'question' | 'result'
 
+const SLIDE_MS = 240
+
 // ─── Main component ──────────────────────────────────────────────────────────
 export function WelcomeClient() {
   const router = useRouter()
+  const resetFeed = useFeedStore((s) => s.reset)
   const [phase, setPhase] = useState<Phase>('tutorial')
   const [cardIndex, setCardIndex] = useState(0)
   const [cardPhase, setCardPhase] = useState<CardPhase>('fact')
@@ -61,6 +65,10 @@ export function WelcomeClient() {
   const [streak, setStreak] = useState(0)
   const [tutorialXp, setTutorialXp] = useState(0)
   const [timeLeft, setTimeLeft] = useState(10)
+
+  const [slideOffset, setSlideOffset] = useState(0)
+  const [slideAnimated, setSlideAnimated] = useState(true)
+  const navigatingRef = useRef(false)
 
   const XP_PER_CORRECT = 10
 
@@ -98,8 +106,14 @@ export function WelcomeClient() {
     )
   } else if (selectedAnswer === -1) {
     feedbackBadge = (
-      <span className="font-sans font-black text-sm text-secondary flex items-center gap-1.5 uppercase">
-        <X className="h-4 w-4 stroke-3" /> WAKTU HABIS!
+      <span className="font-sans font-black text-sm text-muted-foreground flex items-center gap-1.5 uppercase">
+        <X className="h-4 w-4 stroke-3" /> TIMEOUT!
+      </span>
+    )
+  } else if (selectedAnswer === -2) {
+    feedbackBadge = (
+      <span className="font-sans font-black text-sm text-muted-foreground flex items-center gap-1.5 uppercase">
+        <X className="h-4 w-4 stroke-3" /> SKIP!
       </span>
     )
   } else if (selectedAnswer !== null) {
@@ -122,6 +136,32 @@ export function WelcomeClient() {
     setCardPhase('result')
   }
 
+  function handleSkipQuestion() {
+    if (cardPhase !== 'question') return
+    setStreak(0)
+    setSelectedAnswer(-2)
+    setCardPhase('result')
+  }
+
+  function animateTransition(doNav: () => void) {
+    if (navigatingRef.current) return
+    navigatingRef.current = true
+    setSlideAnimated(true)
+    setSlideOffset(-105)
+    setTimeout(() => {
+      doNav()
+      setSlideAnimated(false)
+      setSlideOffset(105)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setSlideAnimated(true)
+          setSlideOffset(0)
+          setTimeout(() => { navigatingRef.current = false }, SLIDE_MS)
+        })
+      })
+    }, SLIDE_MS)
+  }
+
   function handleNext() {
     if (cardIndex < TUTORIAL_CARDS.length - 1) {
       setCardIndex((i) => i + 1)
@@ -140,6 +180,7 @@ export function WelcomeClient() {
     setError(null)
     try {
       await createUser(displayName.trim(), selectedThemes, uid, tutorialXp, streak)
+      resetFeed()
       router.push('/feed')
     } catch {
       setError('Gagal menyimpan. Coba lagi.')
@@ -165,9 +206,17 @@ export function WelcomeClient() {
   if (phase === 'tutorial') {
     return (
       // Full-height centering on desktop, normal scroll on mobile
-      <div className="h-[calc(100dvh-8rem)] lg:h-dvh flex flex-col items-center justify-center gap-4 p-4 lg:p-6 overflow-hidden">
+      <div className="h-[calc(100dvh-8rem)] lg:h-dvh flex flex-col items-center p-4 lg:p-6 overflow-hidden">
         {/* Mobile-only progress indicator (desktop version is overlaid on image) */}
-        <div className="lg:hidden">{progressBadge}</div>
+        <div className="lg:hidden mb-4">{progressBadge}</div>
+
+        <div
+          className="w-full flex-1 min-h-0 flex flex-col items-center justify-center"
+          style={{
+            transform: `translateY(${slideOffset}vh)`,
+            transition: slideAnimated ? `transform ${SLIDE_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)` : 'none',
+          }}
+        >
 
         {cardPhase === 'fact' && (
           <CardShell
@@ -178,7 +227,7 @@ export function WelcomeClient() {
                 onClick={() => setCardPhase('question')}
                 className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border`}
               >
-                Siap Dites! <ChevronRight className="inline h-4 w-4" />
+                Kuis!
               </button>
             }
           >
@@ -220,6 +269,13 @@ export function WelcomeClient() {
                 </button>
               ))}
             </div>
+
+            <button
+              onClick={handleSkipQuestion}
+              className={`${BUTTON_PRESS} text-muted-foreground font-mono text-xs border border-border px-3 py-1.5 hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+            >
+              Skip
+            </button>
           </CardShell>
         )}
 
@@ -227,14 +283,13 @@ export function WelcomeClient() {
           <CardShell
             sourceUrl={card.sourceUrl}
             progress={progressBadge}
-            borderOverride={selectedAnswer === card.correctIndex ? BORDER_CORRECT : BORDER_WRONG}
+            borderOverride={selectedAnswer === card.correctIndex ? BORDER_CORRECT : (selectedAnswer === -1 || selectedAnswer === -2) ? BORDER_SKIP : BORDER_WRONG}
             action={
               <button
-                onClick={handleNext}
+                onClick={() => animateTransition(handleNext)}
                 className={`${BUTTON_PRESS} w-full bg-transparent text-primary font-mono font-bold py-3 border-2 border-primary hover:bg-primary hover:text-primary-foreground transition-colors`}
               >
-                {cardIndex < TUTORIAL_CARDS.length - 1 ? 'Gaskeun!' : 'Lanjutin'}{' '}
-                <ChevronRight className="inline h-4 w-4" />
+                Lanjut
               </button>
             }
           >
@@ -246,7 +301,6 @@ export function WelcomeClient() {
               </span>
             </div>
 
-            {/* Score Delta & Text section */}
             <div className="space-y-4">
               {selectedAnswer === card.correctIndex ? (
                 <>
@@ -257,6 +311,14 @@ export function WelcomeClient() {
                     Nah bener! Menyala ilmu lo! <Sparkles className="h-5 w-5 text-accent fill-accent" />
                   </p>
                 </>
+              ) : selectedAnswer === -1 ? (
+                <p className="font-sans font-bold text-lg text-foreground">
+                  Waktunya habis! Yuk fokus dikit
+                </p>
+              ) : selectedAnswer === -2 ? (
+                <p className="font-sans font-bold text-lg text-foreground">
+                  Di-skip nih! Jangan kebiasaan ya
+                </p>
               ) : (
                 <p className="font-sans font-bold text-lg text-foreground">
                   Salah woi! Baca dulu nih
@@ -272,6 +334,8 @@ export function WelcomeClient() {
             </div>
           </CardShell>
         )}
+
+        </div>
       </div>
     )
   }

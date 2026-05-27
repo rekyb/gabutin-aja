@@ -27,10 +27,10 @@ describe('CardFact', () => {
     expect(screen.getByRole('link')).toHaveAttribute('href', mockCard.sourceUrl)
   })
 
-  it('calls onReady when Siap? is clicked', async () => {
+  it('calls onReady when Kuis! is clicked', async () => {
     const onReady = vi.fn()
     render(<CardFact card={mockCard} onReady={onReady} />)
-    await userEvent.click(screen.getByRole('button', { name: /siap/i }))
+    await userEvent.click(screen.getByRole('button', { name: /kuis/i }))
     expect(onReady).toHaveBeenCalledOnce()
   })
 })

@@ -68,7 +68,7 @@ describe('CardResult', () => {
     expect(screen.queryByText(/XP/i)).not.toBeInTheDocument()
   })
 
-  it('renders Skip state with SKIP! copy and no deltas', () => {
+  it('renders Skip state with SKIP! copy, Yahh di-skip, and no deltas', () => {
     const mockResponse: SubmitAnswerResponse = {
       result: 'skip',
       pointsDelta: -1,
@@ -88,9 +88,35 @@ describe('CardResult', () => {
     )
 
     expect(screen.getByText('SKIP!')).toBeInTheDocument()
+    expect(screen.getByText(/Yahh di-skip/i)).toBeInTheDocument()
     expect(screen.getByText(new RegExp(mockCard.explanation))).toBeInTheDocument()
     expect(screen.queryByText(/Poin/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/XP/i)).not.toBeInTheDocument()
+  })
+
+  it('renders Skip state as Timeout when wasTimeout is true', () => {
+    const mockResponse: SubmitAnswerResponse = {
+      result: 'skip',
+      pointsDelta: -1,
+      xpDelta: 0,
+      newStreak: 0,
+      newLevel: 1,
+      leveledUp: false,
+      newAchievements: [],
+    }
+
+    render(
+      <CardResult
+        card={mockCard}
+        response={mockResponse}
+        onNext={vi.fn()}
+        wasTimeout={true}
+      />
+    )
+
+    expect(screen.getByText('TIMEOUT!')).toBeInTheDocument()
+    expect(screen.getByText(/Waktunya habis! Yuk fokus dikit/i)).toBeInTheDocument()
+    expect(screen.getByText(new RegExp(mockCard.explanation))).toBeInTheDocument()
   })
 
   it('triggers onNext when Lanjut is clicked', async () => {

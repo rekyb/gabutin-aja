@@ -13,7 +13,7 @@ interface SideNavProps {
 
 const links = [
   { href: '/feed', label: 'FYP', icon: Home },
-  { href: '/achievements', label: 'Flex', icon: Trophy },
+  { href: '/achievements', label: 'Flexing', icon: Trophy },
 ]
 
 export const SideNav: FC<SideNavProps> = ({ className }) => {

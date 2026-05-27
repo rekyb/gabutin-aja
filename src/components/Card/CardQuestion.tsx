@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, type FC } from 'react'
-import { Flame, ArrowRight } from 'lucide-react'
+import { Flame } from 'lucide-react'
 import { CardShell } from '@/components/CardShell'
 import { CircularTimer } from '@/components/CircularTimer'
 import { MCQ_OPTION, BUTTON_PRESS } from '@/lib/design-tokens'
@@ -70,7 +70,7 @@ export const CardQuestion: FC<CardQuestionProps> = ({ card, onAnswer, onExpire }
         onClick={() => onAnswer(null)}
         className={`${BUTTON_PRESS} text-muted-foreground font-mono text-xs border border-border px-3 py-1.5 hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary flex items-center gap-1`}
       >
-        Skip <ArrowRight className="h-3 w-3" />
+        Skip
       </button>
     </CardShell>
   )

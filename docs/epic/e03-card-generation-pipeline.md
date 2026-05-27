@@ -1,6 +1,6 @@
 # E03 — Card Generation Pipeline
 
-**Status:** [ ] Not started 
+**Status:** [x] Done — merged to main
 **Wave:** 2 (start after E01, parallel with E02/E05)
 
 ---

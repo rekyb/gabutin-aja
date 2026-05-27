@@ -3,9 +3,9 @@ import { Skeleton } from '@/components/Skeleton'
 
 export const CardSkeleton: FC = () => {
   return (
-    <div className="bg-sidebar overflow-hidden flex flex-col border-2 border-(--color-card-stroke) shadow-[4px_4px_0px_0px_var(--color-shadow)] w-full max-w-[490px] flex-1 min-h-0 lg:w-[430px] lg:max-w-none lg:max-h-[820px]">
+    <div className="bg-sidebar overflow-hidden flex flex-col border-2 border-(--color-card-stroke) shadow-[4px_4px_0px_0px_var(--color-shadow)] flex-1 min-h-0 w-full max-w-[490px] lg:w-[430px] lg:max-w-none">
       {/* Image area */}
-      <div className="aspect-3/1 lg:aspect-auto lg:h-[45%] shrink-0 bg-muted overflow-hidden">
+      <div className="h-[35%] lg:h-[45%] shrink-0 bg-muted overflow-hidden">
         <Skeleton className="w-full h-full" />
       </div>
 

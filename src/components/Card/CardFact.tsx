@@ -1,6 +1,5 @@
 'use client'
 import type { FC } from 'react'
-import { ChevronRight } from 'lucide-react'
 import { CardShell } from '@/components/CardShell'
 import { BUTTON_PRESS } from '@/lib/design-tokens'
 import type { CardDoc } from '@/types'
@@ -19,7 +18,7 @@ export const CardFact: FC<CardFactProps> = ({ card, onReady }) => {
           onClick={onReady}
           className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border`}
         >
-          Siap Dites! <ChevronRight className="inline h-4 w-4" />
+          Kuis!
         </button>
       }
     >
