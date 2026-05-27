@@ -1,12 +1,13 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronRight, BookOpen } from 'lucide-react'
 import { ThemePicker } from '@/components/ThemePicker'
+import { WikipediaImage } from '@/components/WikipediaImage'
 import { createUser } from '@/app/actions/user'
 import { generateUniqueUserId } from '@/utils/user-id'
 import { getUniqueUserId, setUniqueUserId, setGuestOnly } from '@/lib/guest-state'
-import { CARD_BASE, MCQ_OPTION, BUTTON_PRESS, BORDER_CORRECT, BORDER_WRONG } from '@/lib/design-tokens'
+import { MCQ_OPTION, BUTTON_PRESS, BORDER_CORRECT, BORDER_WRONG } from '@/lib/design-tokens'
 import type { ThemeName } from '@/types'
 
 interface TutorialCard {
@@ -44,6 +45,32 @@ const TUTORIAL_CARDS: TutorialCard[] = [
 type Phase = 'tutorial' | 'decision' | 'register'
 type CardPhase = 'fact' | 'question' | 'result'
 
+// ─── Card shell: image left on desktop, stacked on mobile ───────────────────
+function CardShell({
+  sourceUrl,
+  borderOverride,
+  children,
+}: {
+  sourceUrl: string
+  borderOverride?: string
+  children: ReactNode
+}) {
+  const border = borderOverride ?? 'border-2 border-border shadow-[4px_4px_0px_0px_black]'
+  return (
+    <div className={`bg-card ${border} max-w-md lg:max-w-3xl w-full overflow-hidden`}>
+      <div className="flex flex-col lg:flex-row">
+        {/* Image — 4:3 on mobile, fixed left column on desktop */}
+        <div className="aspect-[4/3] lg:aspect-auto lg:w-2/5 lg:self-stretch shrink-0 lg:border-r-2 lg:border-border overflow-hidden">
+          <WikipediaImage sourceUrl={sourceUrl} className="w-full h-full" />
+        </div>
+        {/* Content */}
+        <div className="flex-1 p-6 space-y-4">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
 export function WelcomeClient() {
   const router = useRouter()
   const [phase, setPhase] = useState<Phase>('tutorial')
@@ -56,9 +83,7 @@ export function WelcomeClient() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!getUniqueUserId()) {
-      setUniqueUserId(generateUniqueUserId())
-    }
+    if (!getUniqueUserId()) setUniqueUserId(generateUniqueUserId())
   }, [])
 
   const card = TUTORIAL_CARDS[cardIndex]
@@ -98,6 +123,7 @@ export function WelcomeClient() {
     router.push('/feed')
   }
 
+  // ── Tutorial phase ─────────────────────────────────────────────────────────
   if (phase === 'tutorial') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
@@ -107,13 +133,13 @@ export function WelcomeClient() {
         </div>
 
         {cardPhase === 'fact' && (
-          <div className={`${CARD_BASE} max-w-md w-full space-y-4`}>
+          <CardShell sourceUrl={card.sourceUrl}>
             <p className="font-serif italic text-base leading-relaxed">{card.fact}</p>
             <a
               href={card.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-mono text-muted-foreground underline"
+              className="text-xs font-mono text-muted-foreground underline block"
             >
               Sumber Wikipedia
             </a>
@@ -123,19 +149,15 @@ export function WelcomeClient() {
             >
               Mulai Menjawab <ChevronRight className="inline h-4 w-4" />
             </button>
-          </div>
+          </CardShell>
         )}
 
         {cardPhase === 'question' && (
-          <div className={`${CARD_BASE} max-w-md w-full space-y-4`}>
+          <CardShell sourceUrl={card.sourceUrl}>
             <p className="font-sans font-bold text-base">{card.question}</p>
             <div className="space-y-2">
               {card.options.map((option, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleAnswerSelect(i)}
-                  className={MCQ_OPTION}
-                >
+                <button key={i} onClick={() => handleAnswerSelect(i)} className={MCQ_OPTION}>
                   <span className="font-mono text-muted-foreground mr-2">
                     {String.fromCharCode(65 + i)}.
                   </span>
@@ -143,20 +165,20 @@ export function WelcomeClient() {
                 </button>
               ))}
             </div>
-          </div>
+          </CardShell>
         )}
 
         {cardPhase === 'result' && selectedAnswer !== null && (
-          <div
-            className={`${CARD_BASE} max-w-md w-full space-y-4 ${
-              selectedAnswer === card.correctIndex ? BORDER_CORRECT : BORDER_WRONG
-            }`}
+          <CardShell
+            sourceUrl={card.sourceUrl}
+            borderOverride={selectedAnswer === card.correctIndex ? BORDER_CORRECT : BORDER_WRONG}
           >
             <p className="font-sans font-bold text-base">
               {selectedAnswer === card.correctIndex ? '✓ Bener!' : '✗ Salah'}
             </p>
             <p className="font-mono text-sm text-muted-foreground">
-              Jawaban: <span className="text-foreground font-bold">{card.options[card.correctIndex]}</span>
+              Jawaban:{' '}
+              <span className="text-foreground font-bold">{card.options[card.correctIndex]}</span>
             </p>
             <button
               onClick={handleNext}
@@ -165,19 +187,19 @@ export function WelcomeClient() {
               {cardIndex < TUTORIAL_CARDS.length - 1 ? 'Kartu Berikutnya' : 'Lihat Hasilnya'}{' '}
               <ChevronRight className="inline h-4 w-4" />
             </button>
-          </div>
+          </CardShell>
         )}
       </div>
     )
   }
 
+  // ── Decision phase ─────────────────────────────────────────────────────────
   if (phase === 'decision') {
     const uid = getUniqueUserId() ?? ''
     const avatarUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${uid}`
-
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
-        <div className={`${CARD_BASE} max-w-md w-full space-y-5 text-center`}>
+        <div className="bg-card border-2 border-border shadow-[4px_4px_0px_0px_black] max-w-md w-full p-6 space-y-5 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={avatarUrl} alt="Avatar" className="h-20 w-20 mx-auto border-2 border-border" />
           <h2 className="font-sans font-bold text-xl">Simpan progress lo?</h2>
@@ -192,10 +214,7 @@ export function WelcomeClient() {
             >
               Simpan &amp; Daftar
             </button>
-            <button
-              onClick={handleSkip}
-              className="font-mono text-sm text-muted-foreground underline"
-            >
+            <button onClick={handleSkip} className="font-mono text-sm text-muted-foreground underline">
               Main sebagai tamu dulu
             </button>
           </div>
@@ -204,14 +223,15 @@ export function WelcomeClient() {
     )
   }
 
-  // register phase
+  // ── Register phase ─────────────────────────────────────────────────────────
   const uid = getUniqueUserId() ?? ''
   const avatarUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${uid}`
-  const canSubmit = displayName.trim().length >= 1 && displayName.trim().length <= 30 && selectedThemes.length === 3
+  const canSubmit =
+    displayName.trim().length >= 1 && displayName.trim().length <= 30 && selectedThemes.length === 3
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
-      <div className={`${CARD_BASE} max-w-md w-full space-y-5`}>
+      <div className="bg-card border-2 border-border shadow-[4px_4px_0px_0px_black] max-w-md w-full p-6 space-y-5">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={avatarUrl} alt="Avatar" className="h-14 w-14 border-2 border-border shrink-0" />
