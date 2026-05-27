@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:tweakcn.com)",
+      "Bash(python3 *)",
+      "PowerShell($env:PYTHONUTF8 = \"1\"; python3 \"C:\\\\Users\\\\rekyb\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"brutalism dark bold vibrant\" --domain style -n 4)",
+      "PowerShell($env:PYTHONUTF8 = \"1\"; python3 \"C:\\\\Users\\\\rekyb\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"animation swipe mobile micro-interaction\" --domain ux -n 4)",
+      "PowerShell($env:PYTHONUTF8 = \"1\"; python3 \"C:\\\\Users\\\\rekyb\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"gamification progress streak achievement\" --domain ux -n 4)",
+      "PowerShell($env:PYTHONUTF8 = \"1\"; python3 \"C:\\\\Users\\\\rekyb\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"education learning app\" --domain color -n 3)",
+      "PowerShell($env:PYTHONUTF8 = \"1\"; python3 \"C:\\\\Users\\\\rekyb\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"sidebar navigation responsive layout\" --domain ux -n 4)",
+      "PowerShell($env:PYTHONUTF8 = \"1\"; python3 \"C:\\\\Users\\\\rekyb\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"layout responsive\" --stack nextjs -n 4)"
+    ]
+  }
+}
