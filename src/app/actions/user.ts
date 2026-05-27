@@ -38,6 +38,41 @@ export async function createUser(
   return { userId: user._id.toString() }
 }
 
+export async function updateUserThemes(
+  userId: string,
+  themes: ThemeName[],
+): Promise<void> {
+  if (themes.length !== 3) throw new Error('Exactly 3 themes required')
+
+  await connectDB()
+
+  await User.updateOne({ _id: userId }, { $set: { themes } })
+
+  await ThemeScore.deleteMany({ userId })
+  await ThemeScore.insertMany(
+    themes.map((theme) => ({ userId, theme, points: 0, seenCardIds: [] })),
+  )
+}
+
+export async function completeOnboarding(
+  userId: string,
+  displayName: string,
+  themes: ThemeName[],
+): Promise<void> {
+  const validation = validateDisplayName(displayName)
+  if (!validation.isValid) throw new Error(validation.error || 'Invalid display name')
+  if (themes.length !== 3) throw new Error('Exactly 3 themes required')
+
+  await connectDB()
+
+  await User.updateOne({ _id: userId }, { $set: { displayName: displayName.trim(), themes } })
+
+  await ThemeScore.deleteMany({ userId })
+  await ThemeScore.insertMany(
+    themes.map((theme) => ({ userId, theme, points: 0, seenCardIds: [] })),
+  )
+}
+
 export async function getUserByUniqueId(
   uniqueUserId: string,
 ): Promise<{ _id: string; displayName: string; themes: string[]; xp: number; level: number } | null> {

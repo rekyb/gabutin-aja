@@ -1,6 +1,6 @@
 # E08 — Profile Page
 
-**Status:** [ ] Not started 
+**Status:** [ ] Not started — current `/profile` is a dummy placeholder, full redesign deferred to this epic
 **Wave:** 4 (start after E01, E02, E05, E06)
 
 ---

@@ -43,6 +43,10 @@ export function setGuestOnly(): void {
   localStorage.setItem(GUEST_ONLY_KEY, 'true')
 }
 
+export function clearGuestOnly(): void {
+  localStorage.removeItem(GUEST_ONLY_KEY)
+}
+
 export function getGuestCardCount(): number {
   return Number.parseInt(localStorage.getItem(GUEST_CARD_COUNT_KEY) ?? '0', 10)
 }

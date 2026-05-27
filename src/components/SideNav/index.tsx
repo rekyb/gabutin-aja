@@ -2,7 +2,6 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Trophy } from 'lucide-react'
-import { ThemeToggle } from '@/components/ThemeToggle'
 import { Logo } from '@/components/Logo'
 import { UserProfileButton } from '@/components/UserProfileButton'
 import type { FC } from 'react'
@@ -56,10 +55,9 @@ export const SideNav: FC<SideNavProps> = ({ className }) => {
         </nav>
       </div>
 
-      {/* ── Footer: profile + theme toggle ── */}
+      {/* ── Footer: profile ── */}
       <div className="flex flex-col gap-4 pt-4">
         <UserProfileButton />
-        <ThemeToggle />
       </div>
     </aside>
   )

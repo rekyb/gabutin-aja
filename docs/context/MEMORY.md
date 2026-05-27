@@ -6,6 +6,56 @@
 
 ## Session History
 
+### [2026-05-28] Session 13: Google OAuth Onboarding Polish, Toast System & Welcome UX Overhaul
+- **Task/Epic Status:**
+  - **Task:** Google onboarding flow (new vs returning), toast system, welcome UX cleanup
+  - **Gate 3 (QA):** tsc clean
+  - **Status:** **IN PROGRESS** — on branch `feat/e04-feed-card-lifecycle`
+- **What Was Implemented:**
+  - `src/app/onboarding/page.tsx` + `OnboardingClient.tsx` (NEW) — Server Component reads session + user from DB. Client shows DiceBear avatar (seeded by `uniqueUserId`, NOT Google photo), editable display name input (prefilled with Google name, same `validateDisplayName` + `DISPLAY_NAME_MAX_LENGTH` rules), and `ThemePicker`. On submit calls `completeOnboarding()` → `/feed?toast=google`.
+  - `src/app/actions/user.ts` — Added `completeOnboarding(userId, displayName, themes)` — atomically updates `User.displayName` + `User.themes` and rebuilds `ThemeScore` records. Added `updateUserThemes(userId, themes)` for themes-only updates.
+  - `src/app/api/auth/google/callback/route.ts` — Tracks `isNewUser` flag. New users → `/onboarding`; returning users → `/feed?toast=google_returning`. Guest linking paths both treated as new users.
+  - `src/store/toastStore.ts` (NEW) — Zustand singleton (`message | null`, `show(message)`, `dismiss()`).
+  - `src/components/Toast/index.tsx` (NEW) — General-purpose toast mounted in root layout. Reads from `toastStore` (for programmatic toasts) and `?toast=` URL param (for server-redirect toasts, via `UrlToastTrigger` wrapped in `<Suspense>`). Auto-dismisses after 3s, dismisses on click. Messages: `google` → "Gaskeun! Akun lo udah aktif", `google_returning` → "Eh lo balik lagi! Selamat gabut".
+  - `src/app/layout.tsx` — Added `<Toast />` after `<BottomNav />`.
+  - `src/app/welcome/WelcomeClient.tsx` — Removed "Main sebagai tamu dulu" button and `handleSkip` function (pure guest path without DB removed). Decision phase now: "Masuk pake Google" (primary) + "Jadi tamu aja" (outlined, goes to manual register form). Manual register shows toast: `"Halo [name]! Selamat gabut bareng kita"`. Added `router.refresh()` before `router.push('/feed')` on registration to bust route cache. Added slide-up animation (`animateTransition`) on tutorial "Lanjut". Added skip functionality on tutorial questions (`selectedAnswer = -2`, SKIP badge, "Di-skip nih! Jangan kebiasaan ya" copy).
+  - `src/components/BottomNav/index.tsx` + `SideNav/index.tsx` — Renamed "Flex" → "Flexing".
+  - `docs/epic/e05-scoring-engine.md` — Added first-attempt XP guard (check `Answer.exists({ userId, cardId })` before awarding XP) and client-side option shuffle (`CardQuestion`, Fisher-Yates) as new functional requirements + acceptance criteria.
+- **Discoveries & Technical Insights:**
+  - `ClientBootstrap` already handles Google users correctly: it calls `/api/auth/session`, gets `authenticated: true`, and syncs `uniqueUserId` to localStorage — no extra sync cookie needed.
+  - `UrlToastTrigger` (inside Toast) must be wrapped in `<Suspense>` because `useSearchParams()` requires it in Next.js App Router client components; without the boundary, the entire layout suspends.
+  - `router.refresh()` + `router.push()` in sequence invalidates the Next.js router cache so Server Components on `/feed` re-fetch with the newly created user's data before navigating.
+- **Patterns (What Worked Well):**
+  - Separating URL-param toast (for server-redirect flows like Google OAuth) from programmatic toast (for client-side navigation like manual register) into a single `Toast` component keeps all toast logic in one place.
+  - Passing `uniqueUserId` (not `avatar`) from the Server Component to `OnboardingClient` lets the client generate the DiceBear URL itself — no Google photo ever stored on the client.
+- **Anti-Patterns to Avoid:**
+  - Do NOT use `httpOnly: false` sync cookies to pass `uniqueUserId` to the client after Google auth — `ClientBootstrap`'s session API call already handles this.
+  - Do NOT call `router.push('/feed')` immediately after a server action that creates the user without `router.refresh()` first — stale route cache will serve the old (unauthenticated) Server Component output.
+
+### [2026-05-27] Session 12: Google OAuth Integration (Custom Session & Guest Handoff)
+- **Task/Epic Status:**
+  - **Task:** Google OAuth Integration (Custom Lightweight Flow)
+  - **Gate 3 (QA):** Passed — vitest (61/61), tsc/lint clean, and session utility coverage 100%
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - `src/db/models/User.ts` — Added optional `email` and `googleId` fields with sparse unique indexes to support OAuth while maintaining guest users.
+  - `src/db/models/Session.ts` (NEW) — Mongoose session model with TTL expiration index.
+  - `src/env.ts` — Added env validators for `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` with fallback defaults.
+  - `src/lib/session.ts` (NEW) — Server session helper utility managing `createSession`, `getSession`, and `deleteSession` via cookies.
+  - `src/app/api/auth/google/route.ts` (NEW) — Route handler directing users to Google OAuth screen and setting a temporary guest mapping cookie.
+  - `src/app/api/auth/google/callback/route.ts` (NEW) — Callback endpoint exchanging authorization codes, fetching user profile information, executing guest-linking, and creating server sessions.
+  - `src/app/api/auth/session/route.ts` (NEW) — Endpoint verifying session cookies and returning logged-in user profile.
+  - `src/app/api/auth/logout/route.ts` (NEW) — Endpoint clearing server sessions and cookies.
+  - `src/app/ClientBootstrap.tsx` — Synchronizes server-verified uniqueUserId directly to client-side localStorage and flushes guest flags.
+  - `src/app/welcome/WelcomeClient.tsx` — Render brand-styled neo-brutalist Google sign-in buttons on both the onboarding decision stage and registration form view.
+  - `src/app/profile/page.tsx` & `src/components/ProfileClient/index.tsx` — Built the profile card view with integrated levels progress bar, dual state badges (verified vs guest), and logout/link actions.
+- **Discoveries & Technical Insights:**
+  - Sparse unique indexes are the perfect Mongoose mechanism to enforce unique Google IDs and emails while allowing guest users (with `undefined` fields) to co-exist without collisions.
+  - Using a MongoDB database-backed `Session` collection with TTL index handles cookie verification securely, fast, and without the need for bloated third-party token verification libraries.
+  - A temporary `gabutin_guest_link` cookie is a highly secure, stateless method to transfer guest `uniqueUserId` credentials from client local storage through the Google callback redirect loop for seamless linking.
+- **Patterns (What Worked Well):**
+  - Isolating server session handlers in `src/lib/session.ts` and mocking Next.js `cookies` allows writing extremely fast, pure unit tests in Vitest with 100% code coverage.
+
 ### [2026-05-27] Session 11: Feed UX — Zustand, Navigation, Animation & Flow Guards
 - **Task/Epic Status:**
   - **Task:** Feed UX Polish — state persistence, scroll/swipe nav, slide animation, full-height cards, guest/register guards

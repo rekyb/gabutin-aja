@@ -5,13 +5,14 @@ import { BookOpen, X, Check, Flame, Sparkles } from 'lucide-react'
 import { ThemePicker } from '@/components/ThemePicker'
 import { createUser } from '@/app/actions/user'
 import { generateUniqueUserId } from '@/utils/user-id'
-import { getUniqueUserId, setUniqueUserId, setGuestOnly, setGuestProgress } from '@/lib/guest-state'
+import { getUniqueUserId, setUniqueUserId } from '@/lib/guest-state'
 import { MCQ_OPTION, BUTTON_PRESS, BORDER_CORRECT, BORDER_WRONG, BORDER_SKIP } from '@/lib/design-tokens'
 import { CircularTimer } from '@/components/CircularTimer'
 import { CardShell } from '@/components/CardShell'
 import type { ThemeName } from '@/types'
 import { validateDisplayName, DISPLAY_NAME_MAX_LENGTH } from '@/utils/validators'
 import { useFeedStore } from '@/store/feedStore'
+import { useToastStore } from '@/store/toastStore'
 
 interface TutorialCard {
   fact: string
@@ -54,6 +55,7 @@ const SLIDE_MS = 240
 export function WelcomeClient() {
   const router = useRouter()
   const resetFeed = useFeedStore((s) => s.reset)
+  const showToast = useToastStore((s) => s.show)
   const [phase, setPhase] = useState<Phase>('tutorial')
   const [cardIndex, setCardIndex] = useState(0)
   const [cardPhase, setCardPhase] = useState<CardPhase>('fact')
@@ -181,17 +183,13 @@ export function WelcomeClient() {
     try {
       await createUser(displayName.trim(), selectedThemes, uid, tutorialXp, streak)
       resetFeed()
+      showToast(`Halo ${displayName.trim()}! Selamat gabut bareng kita`)
+      router.refresh()
       router.push('/feed')
     } catch {
       setError('Gagal menyimpan. Coba lagi.')
       setIsSubmitting(false)
     }
-  }
-
-  function handleSkip() {
-    setGuestOnly()
-    setGuestProgress({ xp: tutorialXp, currentStreak: streak, totalAnswers: cardIndex + 1 })
-    router.push('/feed')
   }
 
   // Progress badge content — used on mobile (outside card) and desktop (overlaid)
@@ -356,16 +354,23 @@ export function WelcomeClient() {
           </p>
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => setPhase('register')}
-              className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border`}
+              onClick={() => { window.location.href = `/api/auth/google?guest_uid=${uid}` }}
+              className={`${BUTTON_PRESS} w-full bg-white text-black font-mono font-bold py-3 border-2 border-border flex items-center justify-center`}
             >
-              Simpan &amp; Daftar
+              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
+              </svg>
+              Masuk pake Google
             </button>
+
             <button
-              onClick={handleSkip}
-              className="font-mono text-sm text-muted-foreground underline"
+              onClick={() => setPhase('register')}
+              className={`${BUTTON_PRESS} w-full bg-transparent text-primary font-mono font-bold py-3 border-2 border-primary hover:bg-primary hover:text-primary-foreground transition-colors`}
             >
-              Main sebagai tamu dulu
+              Jadi tamu aja
             </button>
           </div>
         </div>
@@ -420,6 +425,25 @@ export function WelcomeClient() {
           className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           {isSubmitting ? 'Menyimpan...' : 'Mulai Gabutin →'}
+        </button>
+
+        <div className="relative flex py-2 items-center">
+          <div className="flex-grow border-t border-border/40"></div>
+          <span className="flex-shrink mx-4 text-xs font-mono text-muted-foreground">ATAU</span>
+          <div className="flex-grow border-t border-border/40"></div>
+        </div>
+
+        <button
+          onClick={() => { window.location.href = `/api/auth/google?guest_uid=${uid}` }}
+          className={`${BUTTON_PRESS} w-full bg-white text-black font-mono font-bold py-3 border-2 border-border flex items-center justify-center`}
+        >
+          <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
+          </svg>
+          Masuk dengan Google
         </button>
       </div>
     </div>
