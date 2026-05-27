@@ -9,8 +9,8 @@
 ### [2026-05-28] Session 13: Google OAuth Onboarding Polish, Toast System & Welcome UX Overhaul
 - **Task/Epic Status:**
   - **Task:** Google onboarding flow (new vs returning), toast system, welcome UX cleanup
-  - **Gate 3 (QA):** tsc clean
-  - **Status:** **IN PROGRESS** — on branch `feat/e04-feed-card-lifecycle`
+  - **Gate 3 (QA):** vitest 61/61, tsc clean, Sonar violations resolved
+  - **Status:** **DONE** — merged to main 2026-05-28, branch `feat/e04-feed-card-lifecycle`
 - **What Was Implemented:**
   - `src/app/onboarding/page.tsx` + `OnboardingClient.tsx` (NEW) — Server Component reads session + user from DB. Client shows DiceBear avatar (seeded by `uniqueUserId`, NOT Google photo), editable display name input (prefilled with Google name, same `validateDisplayName` + `DISPLAY_NAME_MAX_LENGTH` rules), and `ThemePicker`. On submit calls `completeOnboarding()` → `/feed?toast=google`.
   - `src/app/actions/user.ts` — Added `completeOnboarding(userId, displayName, themes)` — atomically updates `User.displayName` + `User.themes` and rebuilds `ThemeScore` records. Added `updateUserThemes(userId, themes)` for themes-only updates.

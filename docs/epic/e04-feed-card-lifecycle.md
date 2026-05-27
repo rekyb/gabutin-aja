@@ -1,6 +1,6 @@
 # E04 — Feed & Card Lifecycle
 
-**Status:** [ ] Not started 
+**Status:** [x] Done — merged to main 2026-05-28
 **Wave:** 3 (start after E01, E02, E03; stubs acceptable for E05/E07 during UI dev)
 
 ---
