@@ -45,27 +45,47 @@ const TUTORIAL_CARDS: TutorialCard[] = [
 type Phase = 'tutorial' | 'decision' | 'register'
 type CardPhase = 'fact' | 'question' | 'result'
 
-// ─── Card shell: image left on desktop, stacked on mobile ───────────────────
+// ─── Phone-frame card shell ──────────────────────────────────────────────────
+// Mobile : 4:3 image stacked above content, max-w-md
+// Desktop: portrait phone frame (390px wide, ~100dvh tall), image fills top 55%,
+//          content panel occupies bottom 45%
 function CardShell({
   sourceUrl,
   borderOverride,
+  progress,
   children,
 }: {
   sourceUrl: string
   borderOverride?: string
+  progress?: ReactNode
   children: ReactNode
 }) {
   const border = borderOverride ?? 'border-2 border-border shadow-[4px_4px_0px_0px_black]'
   return (
-    <div className={`bg-card ${border} max-w-md lg:max-w-3xl w-full overflow-hidden`}>
-      <div className="flex flex-col lg:flex-row">
-        {/* Image — 4:3 on mobile, fixed left column on desktop */}
-        <div className="aspect-[4/3] lg:aspect-auto lg:w-2/5 lg:self-stretch shrink-0 lg:border-r-2 lg:border-border overflow-hidden">
-          <WikipediaImage sourceUrl={sourceUrl} className="w-full h-full" />
-        </div>
-        {/* Content */}
-        <div className="flex-1 p-6 space-y-4">{children}</div>
+    <div
+      className={[
+        'bg-card overflow-hidden flex flex-col',
+        border,
+        // Mobile: normal card
+        'w-full max-w-md',
+        // Desktop: phone-frame portrait
+        'lg:w-[390px] lg:max-w-none lg:h-[calc(100dvh-4rem)] lg:max-h-[820px]',
+      ].join(' ')}
+    >
+      {/* Image — 4:3 on mobile, top 55% on desktop */}
+      <div className="aspect-[4/3] lg:aspect-auto lg:h-[55%] shrink-0 overflow-hidden relative">
+        <WikipediaImage sourceUrl={sourceUrl} className="w-full h-full" />
+
+        {/* Progress badge overlaid on image — desktop only */}
+        {progress && (
+          <div className="absolute top-3 left-3 hidden lg:flex items-center gap-1.5 bg-black/60 px-2 py-1">
+            {progress}
+          </div>
+        )}
       </div>
+
+      {/* Content panel — scrollable on desktop if needed */}
+      <div className="flex-1 lg:h-[45%] p-6 space-y-4 overflow-y-auto">{children}</div>
     </div>
   )
 }
@@ -123,17 +143,24 @@ export function WelcomeClient() {
     router.push('/feed')
   }
 
+  // Progress badge content — used on mobile (outside card) and desktop (overlaid)
+  const progressBadge = (
+    <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground lg:text-white">
+      <BookOpen className="h-3.5 w-3.5" />
+      Tutorial {cardIndex + 1} / {TUTORIAL_CARDS.length}
+    </span>
+  )
+
   // ── Tutorial phase ─────────────────────────────────────────────────────────
   if (phase === 'tutorial') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
-        <div className="flex items-center gap-2 text-muted-foreground font-mono text-sm">
-          <BookOpen className="h-4 w-4" />
-          Tutorial {cardIndex + 1} / {TUTORIAL_CARDS.length}
-        </div>
+      // Full-height centering on desktop, normal scroll on mobile
+      <div className="min-h-screen lg:h-screen flex flex-col items-center justify-center gap-4 p-4 lg:p-6">
+        {/* Mobile-only progress indicator (desktop version is overlaid on image) */}
+        <div className="lg:hidden">{progressBadge}</div>
 
         {cardPhase === 'fact' && (
-          <CardShell sourceUrl={card.sourceUrl}>
+          <CardShell sourceUrl={card.sourceUrl} progress={progressBadge}>
             <p className="font-serif italic text-base leading-relaxed">{card.fact}</p>
             <a
               href={card.sourceUrl}
@@ -153,7 +180,7 @@ export function WelcomeClient() {
         )}
 
         {cardPhase === 'question' && (
-          <CardShell sourceUrl={card.sourceUrl}>
+          <CardShell sourceUrl={card.sourceUrl} progress={progressBadge}>
             <p className="font-sans font-bold text-base">{card.question}</p>
             <div className="space-y-2">
               {card.options.map((option, i) => (
@@ -171,6 +198,7 @@ export function WelcomeClient() {
         {cardPhase === 'result' && selectedAnswer !== null && (
           <CardShell
             sourceUrl={card.sourceUrl}
+            progress={progressBadge}
             borderOverride={selectedAnswer === card.correctIndex ? BORDER_CORRECT : BORDER_WRONG}
           >
             <p className="font-sans font-bold text-base">
@@ -198,8 +226,8 @@ export function WelcomeClient() {
     const uid = getUniqueUserId() ?? ''
     const avatarUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${uid}`
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
-        <div className="bg-card border-2 border-border shadow-[4px_4px_0px_0px_black] max-w-md w-full p-6 space-y-5 text-center">
+      <div className="min-h-screen lg:h-screen flex flex-col items-center justify-center p-4 lg:p-6">
+        <div className="bg-card border-2 border-border shadow-[4px_4px_0px_0px_black] w-full max-w-md lg:w-[390px] lg:max-w-none p-6 space-y-5 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={avatarUrl} alt="Avatar" className="h-20 w-20 mx-auto border-2 border-border" />
           <h2 className="font-sans font-bold text-xl">Simpan progress lo?</h2>
@@ -214,7 +242,10 @@ export function WelcomeClient() {
             >
               Simpan &amp; Daftar
             </button>
-            <button onClick={handleSkip} className="font-mono text-sm text-muted-foreground underline">
+            <button
+              onClick={handleSkip}
+              className="font-mono text-sm text-muted-foreground underline"
+            >
               Main sebagai tamu dulu
             </button>
           </div>
@@ -230,8 +261,8 @@ export function WelcomeClient() {
     displayName.trim().length >= 1 && displayName.trim().length <= 30 && selectedThemes.length === 3
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
-      <div className="bg-card border-2 border-border shadow-[4px_4px_0px_0px_black] max-w-md w-full p-6 space-y-5">
+    <div className="min-h-screen lg:h-screen flex flex-col items-center justify-center p-4 lg:p-6">
+      <div className="bg-card border-2 border-border shadow-[4px_4px_0px_0px_black] w-full max-w-md lg:w-[390px] lg:max-w-none p-6 space-y-5">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={avatarUrl} alt="Avatar" className="h-14 w-14 border-2 border-border shrink-0" />
