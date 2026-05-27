@@ -12,5 +12,6 @@ export const THEME_KEYWORDS: Record<string, string[]> = {
 export function pickKeyword(theme: string): string {
   const keywords = THEME_KEYWORDS[theme]
   if (!keywords?.length) throw new Error(`Unknown theme: ${theme}`)
-  return keywords[Math.floor(Math.random() * keywords.length)]
+  // Non-security use: picks a random topic for Wikipedia search variety. Math.random() is intentional.
+  return keywords[Math.floor(Math.random() * keywords.length)] // NOSONAR
 }
