@@ -245,7 +245,7 @@ export function WelcomeClient() {
                 onClick={() => setCardPhase('question')}
                 className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border`}
               >
-                Yuk Jawab! <ChevronRight className="inline h-4 w-4" />
+                Siap Dites! <ChevronRight className="inline h-4 w-4" />
               </button>
             }
           >
