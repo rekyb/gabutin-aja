@@ -27,8 +27,11 @@ export function WikipediaImage({ sourceUrl, className = '' }: WikipediaImageProp
     const params = extractWikiParams(sourceUrl)
     if (!params) { setStatus('error'); return }
 
+    const controller = new AbortController()
+
     fetch(
       `https://${params.lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(params.title)}`,
+      { signal: controller.signal },
     )
       .then((r) => r.json())
       .then((data) => {
@@ -39,7 +42,9 @@ export function WikipediaImage({ sourceUrl, className = '' }: WikipediaImageProp
           setStatus('error')
         }
       })
-      .catch(() => setStatus('error'))
+      .catch((err) => { if (err?.name !== 'AbortError') setStatus('error') })
+
+    return () => controller.abort()
   }, [sourceUrl])
 
   if (status === 'loading') {
