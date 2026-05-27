@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Montserrat, Lora, Space_Mono } from 'next/font/google'
 import { BottomNav } from '@/components/BottomNav'
 import { SideNav } from '@/components/SideNav'
@@ -27,6 +28,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${montserrat.variable} ${lora.variable} ${spaceMono.variable}`}
       suppressHydrationWarning
     >
+      {/* Injected into <head> by Next.js before hydration — prevents FOUC without a React script tag */}
+      <Script id="theme-init" strategy="beforeInteractive">{`
+        try {
+          var t = localStorage.getItem('gabutin-theme');
+          document.documentElement.classList.add(t === 'light' ? 'light' : 'dark');
+        } catch(e) {}
+      `}</Script>
       <body className="antialiased bg-background text-foreground">
         <Providers>
           <ClientBootstrap />
