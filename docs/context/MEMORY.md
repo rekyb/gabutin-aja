@@ -64,6 +64,8 @@
   - Added a graceful image-loading skeleton pulse layout (`.loading-skeleton`) in standard CSS and integrated it cleanly inside the three game cycle card states (Fact, Question, Result) using a DRY `renderImage()` template helper.
   - Implemented a premium responsive horizontal split layout (`images | question/reading`) with automated vertical mobile stacking fallback, integrating it cleanly across Fact, Question, and Result card states.
   - Refactored side nav blocks inside `index.html`, `achievements.html`, and `profile.html` to remove the dedicated "Profil" link, moving profile access into a premium clickable side stats container that hosts a live Dicebear avatar.
+  - Styled a circular `...` options indicator inside the side nav stats block and integrated Leaderboard (`leaderboard.html`) links to all side navs and mobile bottom navs.
+  - Created a dedicated `leaderboard.html` coming soon dashboard with a Neo-Brutalist email interest registration form and `localStorage` subscriber caches.
   - Adjusted desktop base structure layout to a fixed 25% sidebar width and 75% content offset ratio in `styles.css`.
   - Added a responsive hover transition and translate click active offset effect in `styles.css` matching MX-Brutalist laws.
   - Integrated a dedicated "Keluar (Logout)" button inside the profile hero card in `profile.html` that safely clears local storage and routes to onboarding.
