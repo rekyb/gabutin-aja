@@ -87,7 +87,7 @@ const FeedClient: FC = () => {
 
   if (showReEngagement) {
     return (
-      <div className="min-h-[calc(100dvh-8rem)] lg:min-h-[calc(100dvh-4rem)] flex items-center justify-center p-4 lg:p-6">
+      <div className="h-[calc(100dvh-8rem)] lg:h-dvh flex flex-col items-center justify-center p-4 lg:p-6 overflow-hidden">
         <ReEngagementCard
           onSave={() => { setShowReEngagement(false); loadCard(userId) }}
           onDismiss={() => { setShowReEngagement(false); loadCard(userId) }}
@@ -97,12 +97,12 @@ const FeedClient: FC = () => {
   }
 
   return (
-    <div className="w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      {state === 'loading' && (
-        <div className="min-h-[calc(100dvh-8rem)] lg:min-h-[calc(100dvh-4rem)] flex items-center justify-center p-4 lg:p-6">
-          <CardSkeleton />
-        </div>
-      )}
+    <div
+      className="h-[calc(100dvh-8rem)] lg:h-dvh flex flex-col items-center justify-center p-4 lg:p-6 overflow-hidden"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {state === 'loading' && <CardSkeleton />}
       {state === 'fact' && card && (
         <CardFact card={card} onReady={() => setState('question')} />
       )}
@@ -110,9 +110,7 @@ const FeedClient: FC = () => {
         <CardQuestion card={card} onAnswer={handleAnswer} onExpire={() => handleAnswer(null)} />
       )}
       {state === 'result' && card && response && (
-        <div className="min-h-[calc(100dvh-8rem)] lg:min-h-[calc(100dvh-4rem)] flex items-center justify-center p-4 lg:p-6">
-          <CardResult card={card} response={response} onNext={handleNext} />
-        </div>
+        <CardResult card={card} response={response} onNext={handleNext} />
       )}
       {achievements.map((a, i) => (
         <AchievementToast

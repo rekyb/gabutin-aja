@@ -3,12 +3,12 @@ import { useState, useEffect, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronRight, BookOpen, X, Check, Flame, Sparkles } from 'lucide-react'
 import { ThemePicker } from '@/components/ThemePicker'
-import { WikipediaImage } from '@/components/WikipediaImage'
 import { createUser } from '@/app/actions/user'
 import { generateUniqueUserId } from '@/utils/user-id'
 import { getUniqueUserId, setUniqueUserId, setGuestOnly, setGuestProgress } from '@/lib/guest-state'
 import { MCQ_OPTION, BUTTON_PRESS, BORDER_CORRECT, BORDER_WRONG } from '@/lib/design-tokens'
 import { CircularTimer } from '@/components/CircularTimer'
+import { CardShell } from '@/components/CardShell'
 import type { ThemeName } from '@/types'
 import { validateDisplayName, DISPLAY_NAME_MAX_LENGTH } from '@/utils/validators'
 
@@ -46,73 +46,6 @@ const TUTORIAL_CARDS: TutorialCard[] = [
 
 type Phase = 'tutorial' | 'decision' | 'register'
 type CardPhase = 'fact' | 'question' | 'result'
-
-// ─── Phone-frame card shell ──────────────────────────────────────────────────
-// Mobile : 4:3 image stacked above content, max-w-md
-// Desktop: portrait phone frame (390px wide, ~100dvh tall), image fills top 45%,
-//          content panel occupies bottom 55%. Action button is always pinned to
-//          the bottom of the content panel, outside the scrollable body area.
-function CardShell({
-  sourceUrl,
-  borderOverride,
-  progress,
-  action,
-  timer,
-  streakSlot,
-  className,
-  hideImage,
-  children,
-}: Readonly<{
-  sourceUrl: string
-  borderOverride?: string
-  progress?: ReactNode
-  action?: ReactNode
-  timer?: ReactNode
-  streakSlot?: ReactNode
-  className?: string
-  hideImage?: boolean
-  children: ReactNode
-}>) {
-  const border = borderOverride ?? 'border-2 border-[var(--color-card-stroke)] shadow-[4px_4px_0px_0px_var(--color-shadow)]'
-  const hasHeader = timer || streakSlot
-  return (
-    <div
-      className={[
-        'bg-sidebar overflow-hidden flex flex-col',
-        border,
-        'w-full max-w-[490px] flex-1 min-h-0',
-        'lg:w-[430px] lg:max-w-none lg:max-h-[820px]',
-        className ?? '',
-      ].join(' ')}
-    >
-      {/* Image — hidden when hideImage is true */}
-      <div className={`${hideImage ? 'hidden' : ''} aspect-3/1 lg:aspect-auto lg:h-[45%] shrink-0 overflow-hidden relative`}>
-        <WikipediaImage sourceUrl={sourceUrl} className="w-full h-full" />
-
-        {progress && (
-          <div className="absolute top-3 left-3 hidden lg:flex items-center gap-1.5 bg-black/60 px-2 py-1">
-            {progress}
-          </div>
-        )}
-      </div>
-
-      {/* Content panel: scrollable body + pinned action */}
-      <div className="flex-1 lg:h-[55%] flex flex-col overflow-hidden p-6 gap-4">
-        {/* Timer + streak header row */}
-        {hasHeader && (
-          <div className="shrink-0 flex items-center justify-between border-b-2 border-border pb-4">
-            <div>{timer ?? <div />}</div>
-            <div>{streakSlot ?? <div />}</div>
-          </div>
-        )}
-        {/* Scrollable body — grows, scrolls if content overflows */}
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-4">{children}</div>
-        {/* Action button — always pinned to bottom */}
-        {action && <div className="shrink-0">{action}</div>}
-      </div>
-    </div>
-  )
-}
 
 // ─── Main component ──────────────────────────────────────────────────────────
 export function WelcomeClient() {
