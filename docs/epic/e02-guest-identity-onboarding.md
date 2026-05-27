@@ -1,7 +1,41 @@
 # E02 — Guest Identity & Onboarding
 
-**Status:** [ ] Not started 
+**Status:** [~] In Progress — Gate 3 pending
 **Wave:** 2 (start after E01)
+
+---
+
+## Implementation Log
+
+### Completed
+- `src/app/welcome/page.tsx` + `WelcomeClient.tsx` — full 3-card tutorial (fact → question → result phases)
+- `src/utils/user-id.ts` — 9-digit `uniqueUserId` generation
+- `src/utils/validators.ts` — `validateDisplayName` (alphanumeric, 3–20 chars, profanity filter)
+- `src/utils/xp.ts` — `getLevelFromXp`, `getXpProgress` (flat 100 XP/level)
+- `src/app/actions/user.ts` — `createUser` (with `initialXp`, `initialStreak` carryover from tutorial) + `getUserByUniqueId`
+- `src/lib/guest-state.ts` — all localStorage helpers including `getGuestProgress` / `setGuestProgress`
+- `src/components/CircularTimer/index.tsx` — shared circular countdown (10s, danger state ≤3s)
+- `src/components/UserProfileButton/index.tsx` — XP bar + level, DB-synced for registered / localStorage for guests
+- Tutorial XP + streak carryover to both register and guest paths
+- DiceBear avatar via `uniqueUserId` seed
+- Theme picker enforces exactly 3 selections
+- Display name validation wired on client + server
+
+### Added Beyond Original Spec
+- **10s countdown timer** on tutorial questions with circular SVG UI and auto-expire (timeout treated as wrong)
+- **`--card-stroke` / `--shadow` CSS tokens** — neon green shadow+border in dark mode, black in light
+- **XP leveling utility** (`src/utils/xp.ts`) shared across components
+- `createUser` signature extended: `initialXp = 0, initialStreak = 0` (backward-compatible)
+
+### Pending (not yet implemented)
+- [ ] First-visit detection in root layout / `ClientBootstrap` — redirect to `/welcome` if no `uniqueUserId`
+- [ ] Returning-user detection — if `uniqueUserId` + DB record exist, skip `/welcome` → `/feed`
+- [ ] `GuestBanner` implementation (shell exists at `src/components/GuestBanner/index.tsx`)
+- [ ] `ReEngagementCard` implementation (shell exists at `src/components/ReEngagementCard/index.tsx`)
+- [ ] `scripts/seed-tutorial.ts` — seed the 3 tutorial cards into MongoDB
+- [ ] Unit tests: `user-id`, `GuestBanner`, `ReEngagementCard` (see Tests section below)
+
+---
 
 ---
 

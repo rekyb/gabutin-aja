@@ -75,11 +75,25 @@ rtk discover         # Find missed RTK usage in sessions
 
 ---
 
+## Epic Kickoff Checklist (MANDATORY — before any code)
+
+For every epic or feature task, execute these steps **in order** before creating a branch or writing code:
+
+1. **Create GitHub issue first** — use `mcp__github__issue_write` with `method: create`. Include goal, scope bullets, and acceptance criteria copied from the epic doc. The issue number becomes the tracking anchor for the branch and PR.
+2. **Create the branch** — `git checkout -b type/eXX-short-description` (e.g. `feat/e02-guest-identity-onboarding`).
+3. **Implement** — follow the epic spec and convention files.
+4. **Gate 3** — `rtk vitest run`, `rtk tsc`, raw `node_modules/.bin/next build`, coverage ≥80%.
+5. **Push + PR** — PR body must reference `Closes #<issue-number>`.
+
+> **Why:** Skipping issue creation means work starts with no tracking anchor. The PR has nothing to close, and the GitHub board has no record of the intent behind the branch.
+
+---
+
 ## Commit & Git Conventions
 
 - **Branch Naming:** `type/e[XX]-short-description` (e.g. `feat/e01-project-foundation`).
 - **Commit Format:** Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`). One logical change per commit.
-- **Pull Requests:** Check remote `main` branch, run strict QA checks, push branch, open PR, and close issue via GitHub MCP.
+- **Pull Requests:** Check remote `main` branch, run strict QA checks, push branch, open PR, and close issue via GitHub MCP. Always assign the PR to `rekyb` (the repo owner) as assignee.
 - **CI Protection:** Protected `main` branch requires TypeScript, Unit Tests, and Coverage (≥80%) GHA checks to pass.
 
 ---

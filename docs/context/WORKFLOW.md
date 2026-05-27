@@ -24,7 +24,7 @@ Before presenting any implementation plan or code for review, self-assess confid
 - **Epic Document Updates:** Verify each criterion thoroughly. Once validated, **update the Epic markdown file** to mark all verified acceptance criteria checkboxes as checked (`[x]`).
 - **Escalation Protocol:** If any acceptance criteria fail to verify or any testing blockages are encountered, **immediately halt and prompt the human developer** with a detailed diagnostics report of the issue. Do not attempt to bypass, skip, or merge with failing criteria.
 - **Deliverables:** Provide a detailed report of the tests run (both automated via `rtk vitest`/`playwright` and manual verification logs) proving that all criteria are fully satisfied.
-- **Approval:** Explicit human approval is required before merging.
+- **Approval:** Explicit human approval is required before merging. After the approval run /compact command for Claude.
 
 ---
 

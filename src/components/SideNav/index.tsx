@@ -1,8 +1,10 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Trophy, User2 } from 'lucide-react'
+import { Home, Trophy } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { Logo } from '@/components/Logo'
+import { UserProfileButton } from '@/components/UserProfileButton'
 import type { FC } from 'react'
 
 interface SideNavProps {
@@ -10,9 +12,8 @@ interface SideNavProps {
 }
 
 const links = [
-  { href: '/feed', label: 'Feed', icon: Home },
-  { href: '/achievements', label: 'Achievements', icon: Trophy },
-  { href: '/profile', label: 'Profile', icon: User2 },
+  { href: '/feed', label: 'FYP', icon: Home },
+  { href: '/achievements', label: 'Flex', icon: Trophy },
 ]
 
 export const SideNav: FC<SideNavProps> = ({ className }) => {
@@ -20,25 +21,29 @@ export const SideNav: FC<SideNavProps> = ({ className }) => {
 
   return (
     <aside
-      className={`fixed left-0 top-0 bottom-0 w-60 z-40 bg-background border-r-2 border-border flex-col justify-between ${className ?? ''}`}
+      className={`fixed left-0 top-0 bottom-0 w-1/4 z-40 bg-sidebar flex flex-col justify-between px-4 py-6 ${className ?? ''}`}
     >
-      <div className="flex flex-col flex-1 p-4">
-        <div className="mb-8 p-2">
-          <span className="font-black text-xl tracking-widest text-foreground">GABUTIN</span>
+      {/* ── Top: logo + links ── */}
+      <div className="flex flex-col gap-0">
+        {/* Logo */}
+        <div className="flex items-center gap-3 pb-4 mb-8">
+          <Logo size={40} />
+          <span className="font-black text-2xl tracking-widest text-foreground">GABUTIN</span>
         </div>
 
+        {/* Nav links */}
         <nav>
-          <ul className="space-y-1">
+          <ul className="flex flex-col gap-3">
             {links.map(({ href, label, icon: Icon }) => {
               const active = pathname === href
               return (
                 <li key={href}>
                   <Link
                     href={href}
-                    className={`flex items-center gap-3 px-3 py-2 font-bold text-sm transition-colors border-2 ${
+                    className={`flex items-center gap-3 px-4 py-3 font-bold text-sm border-2 transition-colors ${
                       active
-                        ? 'bg-primary text-primary-foreground border-border shadow-[2px_2px_0px_0px_black]'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted'
+                        ? 'bg-primary text-primary-foreground border-border shadow-[2px_2px_0px_0px_var(--color-shadow)]'
+                        : 'border-transparent text-foreground hover:bg-muted'
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -49,14 +54,11 @@ export const SideNav: FC<SideNavProps> = ({ className }) => {
             })}
           </ul>
         </nav>
-
-        <div className="mt-4 p-3 border-2 border-border bg-muted">
-          <p className="text-xs text-muted-foreground font-mono">XP · Level</p>
-          <p className="text-sm font-bold text-foreground">— placeholder —</p>
-        </div>
       </div>
 
-      <div className="p-4 border-t-2 border-border">
+      {/* ── Footer: profile + theme toggle ── */}
+      <div className="flex flex-col gap-4 pt-4">
+        <UserProfileButton />
         <ThemeToggle />
       </div>
     </aside>

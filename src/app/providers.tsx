@@ -1,16 +1,7 @@
 'use client'
-import { ThemeProvider } from 'next-themes'
+import { ThemeProvider } from '@/lib/theme'
 import type { ReactNode } from 'react'
 
 export function Providers({ children }: { children: ReactNode }) {
-  return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem={false}
-      storageKey="gabutin-theme"
-    >
-      {children}
-    </ThemeProvider>
-  )
+  return <ThemeProvider>{children}</ThemeProvider>
 }

@@ -6,6 +6,98 @@
 
 ## Session History
 
+### [2026-05-27] Session 08: Display Name Input Validation & Type Check Compilation Fixes
+- **Task/Epic Status:**
+  - **Task:** Display Name Input Validation
+  - **Gate 3 (QA):** Passed — vitest (23/23), next build (clean compile)
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - Implemented core validation logic in `src/utils/validators.ts` with alphanumeric constraints, length limits (3 to 20), and a comprehensive Indonesian and English profanity filter.
+  - Updated the frontend onboarding form in `src/app/welcome/WelcomeClient.tsx` to utilize validation, render dynamic neobrutalist orange errors below the input field, limit physical input to 20 chars via `maxLength`, and lock submission unless valid.
+  - Added secure server-side validation inside the `createUser` Server Action (`src/app/actions/user.ts`) to throw validation errors on bypass.
+  - Wrote comprehensive unit tests under `src/utils/validators.test.ts` verifying all length boundaries, special characters, and both Indonesian/English bad word patterns (including mixed-case and nested profanities).
+  - Fixed a pre-existing TypeScript compiler re-assignment type error in `src/components/Card/CardResult.tsx`.
+  - Optimized project-wide Tailwind CSS classes for Tailwind v4 compatibility by replacing bracket syntax selectors with native CSS variable syntax (e.g. `border-[var(--color-card-stroke)]` to `border-(--color-card-stroke)`), native aspect ratios (`aspect-[3/1]` to `aspect-3/1`), and native stroke widths (`stroke-[3]` to `stroke-3`).
+  - Resolved multiple strict linter warnings in `WelcomeClient.tsx`, `layout.tsx`, and all skeleton loading files (`loading.tsx` in `feed`, `achievements`, `leaderboard`, and `profile`) by eliminating array index keys via static skeleton identifier keys, removing redundant React fragments, enforcing accessibility label-to-control relationships, resolving zero-fraction decimals, and correcting ES6 string conversions.
+  - Completed a final round of linter cleanups resolving warnings in `CardQuestion.tsx`, `CardResult.tsx`, `CardSkeleton/index.tsx`, `BottomNav/index.tsx`, `AppBar/index.tsx`, `connect.ts`, `guest-state.ts`, and `Skeleton/index.tsx` (enforcing Readonly props, eliminating legacy parseInt and Array keys, and optimizing ES6 fromCodePoint string generators).
+- **Discoveries & Technical Insights:**
+  - Tailwind v4 natively supports standardized CSS variables via `class-(--var-name)` notation and simplified numeric modifiers (e.g., `stroke-3`), which is preferred over legacy brackets `class-[val]`.
+  - Explicitly typing dynamic styling/layout variables as `string` when initializing them with a `const` (like `let borderClass: string = BORDER_SKIP`) avoids TypeScript re-assignment type inference issues down the line.
+- **Patterns (What Worked Well):**
+  - Isolating pure, deterministic validation algorithms into standalone utility files (`src/utils/validators.ts`) makes them extremely easy to unit test and share between Client and Server Action environments.
+- **Anti-Patterns to Avoid:**
+  - Never let TypeScript infer literal types for re-assignable variables that hold design token constants; explicitly type them as `string` to avoid build breakages.
+
+### [2026-05-27] Session 07: Quiz Wrong Answer Feedback & CardResult Design
+- **Task/Epic Status:**
+  - **Task:** Quiz Wrong Answer Feedback & Refined CardResult Design
+  - **Gate 3 (QA):** Passed — vitest (16/16), next lint (0 errors)
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - Redesigned the quiz wrong/correct feedback UI for the onboarding tutorial `WelcomeClient.tsx` matching the user's mockup design.
+  - Implemented the top header bar with left-aligned `SALAH!` / `BENAR!` text + icons and right-aligned Streak counter with animated Lucide Flame.
+  - Added the energetic Option A Gen-Z copy descriptions: `"Salah woi! Baca dulu nih"` on wrong and `"Nah bener! Menyala ilmu lo!"` on correct answers, with Lucide Sparkles icon on correct (and no book icon on wrong) and the blockquote layout (`border-l-4 border-border/40 pl-4 py-1 italic font-serif`) for the Wikipedia fact explanations.
+  - Standardized the core Feed component `CardResult.tsx` to follow the exact same visual layout, incorporating dynamic points/XP deltas, header bars, and Lora italicized blockquotes for `card.explanation`.
+  - Added `CardResult.test.tsx` containing comprehensive unit tests for all result states (correct, wrong, skip) and interaction handling.
+  - Widened the card sizes and panels consistently by **10%** across both mobile viewports (`max-w-[490px]`) and desktop viewports (`lg:w-[430px]`) for `CardQuestion.tsx`, `CardResult.tsx`, `CardSkeleton/index.tsx`, `FeedLoading` (`src/app/feed/loading.tsx`), and the onboarding shells in `WelcomeClient.tsx`.
+  - Configured quiz scoring feedback according to revised requirements: completely suppressed point/XP delta text blocks on wrong and skipped answers (since XP is not reduced), and simplified correct-answer feedback to display only the XP gain (`+3 XP`), as points are handled by the backend.
+  - Re-mapped the global navigation copies in `SideNav/index.tsx` and `BottomNav/index.tsx` to use the chosen Gen-Z terms (`FYP`, `Flex`, `Profil`).
+  - Removed the `Leaderboard` (Ranking) link entirely from the active navigation menus and test assertions, deferring its launch until v1.x.
+- **Discoveries & Technical Insights:**
+  - Testing against case-insensitive regex selectors in Vitest (e.g. `/SALAH!/i`) can easily match description copy containing similar words (like `Yahhh salah!`). Using exact string matches (`'SALAH!'`) is much more robust.
+- **Patterns (What Worked Well):**
+  - Reusing standard Lucide icons at high stroke widths (e.g., `stroke-[3]`) mimics the premium heavy design feel of standard emojis while complying with strict emoji bans.
+- **Anti-Patterns to Avoid:**
+  - Do not use case-insensitive DOM queries for general terms that may recur within body paragraphs.
+
+### [2026-05-27] Session 06: Runtime Connection, Build Fixes & CardQuestion Design
+- **Task/Epic Status:**
+  - **Epic:** Runtime Error Debugging & UI Vibe Realization (E04 Pre-flight)
+  - **Gate 3 (QA):** Passed — vitest (12/12), tsc (0 errors), next build (clean)
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - Updated `MONGODB_URI` in `.env` and `.env.local` to use the standard non-SRV connection string (listing all three replica set member hosts and specifying SSL/ReplicaSet options).
+  - Fixed TypeScript compiler type errors in `src/app/leaderboard/loading.tsx` and `src/app/profile/loading.tsx` where an inline `style` prop was passed to the `Skeleton` component (which does not accept `style`). Replaced with idiomatic Tailwind `rounded-full` class.
+  - Implemented the `CardQuestion` component in `src/components/Card/CardQuestion.tsx` following the exact neo-brutalist split layout styling from the static prototype `docs/prototype/index.html` (including responsive image-split layout using `WikipediaImage`, 10s interactive timer bar, key-press styling, and Lucide accessibility icons).
+  - Implemented the `CardSkeleton` component in `src/components/CardSkeleton/index.tsx` as a high-fidelity loading placeholder matching the exact split image-content layout and neobrutalist borders of `CardQuestion`, utilizing reuseable `<Skeleton />` elements with strict `0px border radius` layout rules.
+- **Discoveries & Technical Insights:**
+  - Standard SRV lookup (`mongodb+srv://...`) via Node.js native DNS resolver (`c-ares`) on the local network fails with `querySrv ETIMEOUT`. Changing to standard `mongodb://` connection string completely bypasses SRV lookup and resolves immediately and successfully.
+  - Emojis are strictly banned in the React codebase; user-facing components must use SVGs/Lucide-React (`Brain`, `Flame`, `ArrowRight`) to provide energetic indicators.
+- **Patterns (What Worked Well):**
+  - Combining `WikipediaImage` dynamic fetches inside the split layout gives standard A-grade brutalist UX seamlessly on Next.js routes.
+  - Using fallback hooks in the client components for reading optional stats like `currentStreak` from local storage.
+- **Anti-Patterns to Avoid:**
+  - Avoid hardcoding styling layout classes or inline styles; use Tailwind utility patterns mapped to `design-tokens.ts` for clean structural integrity.
+
+### [2026-05-27] Session 05: E02 — Guest Identity & Onboarding
+- **Task/Epic Status:**
+  - **Epic:** E02 — Guest Identity & Onboarding
+  - **Gate 3 (QA):** Passed — vitest (12/12), tsc (0 errors), next build (clean), coverage 100%/87.5%/100%/100%
+  - **Status:** **DONE** — branch `feat/e02-guest-identity-onboarding`, PR pending.
+- **What Was Implemented:**
+  - `src/utils/user-id.ts` — `generateUniqueUserId()`: 9-digit numeric string via `Math.floor(100_000_000 + Math.random() * 900_000_000).toString()`.
+  - `src/lib/guest-state.ts` — Full localStorage helper set: `getUniqueUserId`, `setUniqueUserId`, `isGuestOnly`, `setGuestOnly`, `getGuestCardCount`, `incrementGuestCardCount`, `getLastReminderShown`, `setLastReminderShown`, `shouldShowReEngagement` (threshold: 15 cards + 24h cooldown).
+  - `src/app/actions/user.ts` — `createUser` (validates 3 themes, creates User + 3 ThemeScore docs) and `getUserByUniqueId` (returns lean doc or null).
+  - `src/components/GuestBanner/index.tsx` — Filled in shell: AlertTriangle icon + "Main sebagai tamu — progress bisa ilang kalau lo hapus cache". No props required.
+  - `src/components/ReEngagementCard/index.tsx` — Filled in shell: updated interface to `{ onSave, onDismiss }`, "Simpan Progress" + "Ntar deh →" buttons, full card style from design-tokens.
+  - `src/components/ThemePicker/index.tsx` — New component: 8 selectable theme cards (excluding `tutorial`), enforces exactly 3 selections, disabled state when limit reached, `aria-pressed` for accessibility.
+  - `src/app/welcome/page.tsx` + `WelcomeClient.tsx` — Full tutorial flow: 3 static hardcoded cards (fact → question → result × 3), decision screen ("Simpan & Daftar" / "Main sebagai tamu"), registration form with ThemePicker + display name input + DiceBear avatar preview.
+  - `src/app/ClientBootstrap.tsx` — Client Component (no render): on mount, generates uniqueUserId if absent and redirects to `/welcome`; on `/welcome` with existing uniqueUserId, calls `getUserByUniqueId` and redirects to `/feed` if DB record exists.
+  - `src/app/GuestBannerPortal.tsx` — Client Component: checks `isGuestOnly()` on each pathname change, conditionally renders `<GuestBanner />`.
+  - Root `layout.tsx` updated: `<ClientBootstrap />` + `<GuestBannerPortal />` added inside `<Providers>`.
+  - `scripts/seed-tutorial.ts` — One-time DB seed for 3 tutorial cards (skips if already seeded). Run with `pnpm tsx scripts/seed-tutorial.ts`.
+- **Discoveries & Technical Insights:**
+  - Tutorial cards are static in `WelcomeClient` (same content as seed script). This decouples the welcome flow from DB availability — the seed is only needed for E04 feed algorithm.
+  - `User.findOne().lean()` loses TypeScript typing from `mongoose.models.User ?? mongoose.model<IUser>(...)` because `mongoose.models.User` is typed as `any`. Fix: `User.findOne().lean<IUser>()` explicitly passes the generic to lean.
+  - `GuestBanner` renders unconditionally — parent (`GuestBannerPortal`) decides when to show it. This keeps the test simple: `render(<GuestBanner />)` always shows the text.
+  - `next build` returns exit code 1 when run via `rtk` even on success. Use raw `node_modules/.bin/next build` to verify real output. Routes confirmed: `/`, `/welcome`, `/feed`, `/achievements`, `/profile`, `/_not-found`.
+- **Patterns (What Worked Well):**
+  - Decoupling localStorage helpers into `src/lib/guest-state.ts` keeps guest logic testable and reusable across E04 (incrementGuestCardCount/shouldShowReEngagement).
+  - Using `aria-pressed` on ThemePicker buttons follows convention FE accessibility rules without extra state.
+- **Anti-Patterns to Avoid:**
+  - Do NOT import Mongoose models with default imports — all models use named exports (`export const User = ...`). Always `import { User } from '@/db/models/User'`.
+  - Do NOT call `rtk next build` and trust the exit code — rtk wraps it and can return non-zero even on success. Always raw-check the output.
+
 ### [2026-05-27] Session 04: E01 — Project Foundation
 - **Task/Epic Status:**
   - **Epic:** E01 — Project Foundation
@@ -54,29 +146,6 @@
   - Do NOT commit `pnpm-workspace.yaml` if it was generated by an interrupted `pnpm approve-builds` session.
   - Do NOT run `pnpm test:coverage` after `pnpm build` without first deleting `.next/` — Turbopack chunks break the v8 source map reader.
   - Do NOT set Vitest `all: true` (or leave as default in v3+) without also excluding config files and `.next/**`.
-
-### [2026-05-27] Session 03: Wikipedia REST API Image Fetching & Sidenav Navigation Sync
-- **Task/Epic Status:**
-  - **Epic:** None (Prototype Refinement / Meta-Task)
-  - **Status:** **Prototype Refinement Completed** — Dynamic image rendering and premium brutalist navigations are fully styled and integrated.
-- **What Was Implemented:**
-  - Implemented client-side dynamic media pulling using Wikipedia's summary API (`https://{lang}.wikipedia.org/api/rest_v1/page/summary/{title}`) inside `app.js`.
-  - Added a graceful image-loading skeleton pulse layout (`.loading-skeleton`) in standard CSS and integrated it cleanly inside the three game cycle card states (Fact, Question, Result) using a DRY `renderImage()` template helper.
-  - Implemented a premium responsive horizontal split layout (`images | question/reading`) with automated vertical mobile stacking fallback, integrating it cleanly across Fact, Question, and Result card states.
-  - Refactored side nav blocks inside `index.html`, `achievements.html`, and `profile.html` to remove the dedicated "Profil" link, moving profile access into a premium clickable side stats container that hosts a live Dicebear avatar.
-  - Styled a circular `...` options indicator inside the side nav stats block and integrated Leaderboard (`leaderboard.html`) links to all side navs and mobile bottom navs.
-  - Created a dedicated `leaderboard.html` coming soon dashboard with a Neo-Brutalist email interest registration form and `localStorage` subscriber caches.
-  - Adjusted desktop base structure layout to a fixed 25% sidebar width and 75% content offset ratio in `styles.css`.
-  - Added a responsive hover transition and translate click active offset effect in `styles.css` matching MX-Brutalist laws.
-  - Integrated a dedicated "Keluar (Logout)" button inside the profile hero card in `profile.html` that safely clears local storage and routes to onboarding.
-- **Discoveries & Technical Insights:**
-  - Wikipedia's Page Summary REST API is extremely fast and lightweight, making it an excellent live content database substitute for client-side prototypes.
-  - Gracefully fallback-generating missing primary keys (like `uniqueUserId` on the fly inside DOMContentLoaded hook) protects prototype runtime state against legacy/stale local storages.
-- **Corrections Made:**
-  - Standardized all navigation details to ensure `quickAvatar` updates accurately across all active DOM contents.
-- **Patterns (What Worked Well):**
-  - Consolidating HTML card image rendering into a single, clean Javascript template helper keeps all card cycle logic de-duplicated and highly maintainable.
-
 ### [2026-05-27] Session 02: Multi-Page Prototype Architecture & Responsive Scroll Experience
 - **Task/Epic Status:**
   - **Epic:** None (Prototype Refinement / Meta-Task)
