@@ -33,8 +33,8 @@ export const CardShell: FC<CardShellProps> = ({
       className={[
         'bg-sidebar overflow-hidden flex flex-col',
         border,
-        'w-full max-w-[490px] flex-1 min-h-0',
-        'lg:w-[430px] lg:max-w-none lg:max-h-[820px]',
+        'w-full max-w-[490px]',
+        'lg:w-[430px] lg:max-w-none lg:flex-1 lg:min-h-0 lg:max-h-[820px]',
         className ?? '',
       ].join(' ')}
     >
