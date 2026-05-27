@@ -2,9 +2,9 @@
 
 > **This document is the integration seed.** Every agent executing an epic must read this document first. It defines the shared contracts, file structure, naming conventions, and integration checkpoints that prevent parallel tracks from diverging.
 
-**Date:** 2026-05-27 
-**Stack:** Next.js 16 App Router · TypeScript strict · MongoDB + Mongoose · Tailwind CSS v4 + shadcn/ui · Gemini AI · pnpm 
-**Deploy target:** Google Cloud Run (single container) 
+**Date:** 2026-05-28 (last updated)
+**Stack:** Next.js 16 App Router · TypeScript strict · MongoDB + Mongoose · Tailwind CSS v4 + shadcn/ui · Gemini AI · pnpm
+**Deploy target:** Google Cloud Run (single container)
 **Testing:** Vitest + React Testing Library (unit/integration) · 80% coverage on all new files
 
 ---
@@ -13,10 +13,10 @@
 
 | ID | Name | Status | Can start after | Can parallelize with |
 |----|------|--------|-----------------|----------------------|
-| E01 | [Project Foundation](./epic/e01-project-foundation.md) | [ ] | — | — |
-| E02 | [Guest Identity & Onboarding](./epic/e02-guest-identity-onboarding.md) | [ ] | E01 | E03, E05, E09 |
-| E03 | [Card Generation Pipeline](./epic/e03-card-generation-pipeline.md) | [ ] | E01 | E02, E05, E09 |
-| E04 | [Feed & Card Lifecycle](./epic/e04-feed-card-lifecycle.md) | [ ] | E01, E02, E03 | E06, E07, E08, E09 |
+| E01 | [Project Foundation](./epic/e01-project-foundation.md) | [DONE] | — | — |
+| E02 | [Guest Identity & Onboarding](./epic/e02-guest-identity-onboarding.md) | [DONE] | E01 | E03, E05, E09 |
+| E03 | [Card Generation Pipeline](./epic/e03-card-generation-pipeline.md) | [DONE] | E01 | E02, E05, E09 |
+| E04 | [Feed & Card Lifecycle](./epic/e04-feed-card-lifecycle.md) | [DONE] | E01, E02, E03 | E06, E07, E08, E09 |
 | E05 | [Scoring Engine](./epic/e05-scoring-engine.md) | [ ] | E01 | E02, E03, E09 |
 | E06 | [Achievement System](./epic/e06-achievement-system.md) | [ ] | E01, E02, E05 | E07, E08, E09 |
 | E07 | [Adaptive Feed Algorithm](./epic/e07-adaptive-feed-algorithm.md) | [ ] | E01, E02, E03, E05 | E06, E08, E09 |
@@ -32,27 +32,27 @@
 
 ```
 Wave 1 (no deps):
- E01 — Project Foundation
+  E01 — Project Foundation                         [DONE]
 
 Wave 2 (unblock most tracks after E01):
- E02 — Guest Identity & Onboarding
- E03 — Card Generation Pipeline
- E05 — Scoring Engine
+  E02 — Guest Identity & Onboarding                [DONE]
+  E03 — Card Generation Pipeline                   [DONE]
+  E05 — Scoring Engine
 
 Wave 3 (feeds need data layer ready):
- E04 — Feed & Card Lifecycle   (after E02, E03; stubs E05/E07 API)
- E06 — Achievement System     (after E02, E05)
- E07 — Adaptive Feed Algorithm   (after E02, E03, E05)
- E09 — PWA & Analytics       (after E02)
+  E04 — Feed & Card Lifecycle                      [DONE]
+  E06 — Achievement System      (after E02, E05)
+  E07 — Adaptive Feed Algorithm (after E02, E03, E05)
+  E09 — PWA & Analytics         (after E02)
 
 Wave 4 (stitches everything):
- E08 — Profile Page        (after E02, E05, E06)
+  E08 — Profile Page            (after E02, E05, E06)
 
 Wave 5 (final):
- E10 — Deployment         (after all complete)
+  E10 — Deployment              (after all complete)
 ```
 
-> **CI gate note:** E01 ships the `.github/workflows/ci.yml`. Enable branch protection on `main` immediately after E01 merges so every subsequent PR (E02–E10) is gated by `TypeScript`, `Unit Tests`, and `Coverage Gate (≥80%)`.
+> **CI gate note:** E01 ships the `.github/workflows/ci.yml`. Branch protection on `main` is active — every PR (E05–E10) is gated by `TypeScript`, `Unit Tests`, and `Coverage Gate (≥80%)`.
 
 **Integration note:** E04 may stub `submitAnswer` and `getNextCard` while E05/E07 are in progress. Stubs must match the exact TypeScript signatures defined in this document — do not invent alternate shapes.
 
@@ -66,45 +66,75 @@ All epics import from `src/types/index.ts`. **Never redefine these inline.**
 // src/types/index.ts
 
 export type ThemeName =
- | 'sejarah_indonesia'
- | 'sains'
- | 'pop_culture'
- | 'geografi'
- | 'matematika'
- | 'psikologi'
- | 'sejarah_dunia'
- | 'coding_tech'
- | 'tutorial';
+  | 'sejarah_indonesia'
+  | 'sains'
+  | 'pop_culture'
+  | 'geografi'
+  | 'matematika'
+  | 'psikologi'
+  | 'sejarah_dunia'
+  | 'coding_tech'
+  | 'tutorial';
 
 export type AnswerResult = 'correct' | 'wrong' | 'skip';
 export type AchievementRarity = 'Common' | 'Rare' | 'Epic' | 'Mythic';
 
 export interface SubmitAnswerResponse {
- result: AnswerResult;
- pointsDelta: number;     // +2 | -2 | -1
- xpDelta: number;       // 0–7
- newStreak: number;
- newLevel: number;
- leveledUp: boolean;
- newAchievements: AchievementDef[];
+  result: AnswerResult;
+  pointsDelta: number;     // +2 | -2 | -1
+  xpDelta: number;        // 0–7
+  newStreak: number;
+  newLevel: number;
+  leveledUp: boolean;
+  newAchievements: AchievementDef[];
 }
 
 export interface AchievementDef {
- key: string;
- title: string;
- icon: string;
- rarity: AchievementRarity;
- description: string;
+  key: string;
+  title: string;
+  icon: string;
+  rarity: AchievementRarity;
+  description: string;
 }
 
 export interface UserProfile {
- displayName: string;
- uniqueUserId: string;
- level: number;
- xp: number;
- xpToNextLevel: number;
- levelTitle: string;
- currentStreak: number;
+  displayName: string;
+  uniqueUserId: string;
+  level: number;
+  xp: number;
+  xpToNextLevel: number;
+  levelTitle: string;
+  currentStreak: number;
+}
+
+// Lean document types — serializable plain objects (result of .lean() queries).
+// Use these as prop types in Client Components; Mongoose Document types belong server-side only.
+
+export interface CardDoc {
+  _id: string;
+  theme: string;
+  fact: string;
+  sourceUrl: string;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+export interface UserAchievementDoc {
+  _id: string;
+  userId: string;
+  achievementKey: string;
+  earnedAt: Date;
+  isShowcased: boolean;
+  showcasePosition: 1 | 2 | 3 | null;
+}
+
+export interface ThemeScoreDoc {
+  _id: string;
+  userId: string;
+  theme: string;
+  points: number;
 }
 ```
 
@@ -121,46 +151,72 @@ Defined in `src/db/models/`. **All epics import from here — never redefine sch
 | `src/db/models/Card.ts` | `Card` | `cards` |
 | `src/db/models/Answer.ts` | `Answer` | `answers` |
 | `src/db/models/UserAchievement.ts` | `UserAchievement` | `user_achievements` |
+| `src/db/models/Session.ts` | `Session` | `sessions` |
 
-Full schema definitions are in **E01 epic**. Every other epic references these — do not add fields outside of E01 without updating this document.
+Full schema definitions are in **E01 epic**. `Session` was added in E02 (Google OAuth). Every other epic references these — do not add fields outside of their owner epics without updating this document.
 
 ---
 
 ## Global Component Registry
 
-All shared UI components are scaffolded as **empty shells in E01**. Feature epics fill in the implementation — they never create these files independently. This prevents parallel agents from building at conflicting paths or with incompatible prop shapes.
+All shared UI components are scaffolded as **empty shells in E01**. Feature epics fill in the implementation — they never create these files independently.
 
-> **Rule for all agents:** Before creating a component file, check this table. If it is listed here, the file already exists from E01 — implement the body, don't scaffold the file.
+> **Rule for all agents:** Before creating a component file, check this table. If it is listed here, the file already exists — implement the body, don't scaffold the file.
 
-| Component | File | Props Type | Owner Epic |
-|-----------|------|------------|------------|
-| `GuestBanner` | `src/components/GuestBanner/index.tsx` | `GuestBannerProps` | E02 |
-| `ReEngagementCard` | `src/components/ReEngagementCard/index.tsx` | `ReEngagementCardProps` | E02 |
-| `CardFact` | `src/components/Card/CardFact.tsx` | `CardFactProps` | E04 |
-| `CardQuestion` | `src/components/Card/CardQuestion.tsx` | `CardQuestionProps` | E04 |
-| `CardResult` | `src/components/Card/CardResult.tsx` | `CardResultProps` | E04 |
-| `CardNext` | `src/components/Card/CardNext.tsx` | `CardNextProps` | E04 |
-| `AchievementToast` | `src/components/AchievementToast/index.tsx` | `AchievementToastProps` | E04 |
-| `CountdownTimer` | `src/components/CountdownTimer/index.tsx` | `CountdownTimerProps` | E04 |
-| `CardSkeleton` | `src/components/CardSkeleton/index.tsx` | none | E04 |
-| `XpBar` | `src/components/XpBar/index.tsx` | `XpBarProps` | E08 |
-| `ProfileClient` | `src/components/ProfileClient/index.tsx` | none | E08 |
-| `BottomNav` | `src/components/BottomNav/index.tsx` | `{ className: string }` | E01 [DONE] |
-| `SideNav` | `src/components/SideNav/index.tsx` | `{ className: string }` | E01 [DONE] |
-| `ThemeToggle` | `src/components/ThemeToggle/index.tsx` | none | E01 [DONE] |
+| Component | File | Owner Epic | Status |
+|-----------|------|------------|--------|
+| `BottomNav` | `src/components/BottomNav/index.tsx` | E01 | [DONE] |
+| `SideNav` | `src/components/SideNav/index.tsx` | E01 | [DONE] |
+| `ThemeToggle` | `src/components/ThemeToggle/index.tsx` | E01 | [DONE] |
+| `Logo` | `src/components/Logo/index.tsx` | E01 | [DONE] |
+| `AppBar` | `src/components/AppBar/index.tsx` | E01 | [DONE] |
+| `XpBar` | `src/components/XpBar/index.tsx` | E08 | shell only |
+| `ProfileClient` | `src/components/ProfileClient/index.tsx` | E08 | stub — redesign in E08 |
+| `GuestBanner` | `src/components/GuestBanner/index.tsx` | E02 | [DONE] |
+| `ReEngagementCard` | `src/components/ReEngagementCard/index.tsx` | E02 | [DONE] |
+| `CircularTimer` | `src/components/CircularTimer/index.tsx` | E02 | [DONE] |
+| `ThemePicker` | `src/components/ThemePicker/index.tsx` | E02 | [DONE] |
+| `UserProfileButton` | `src/components/UserProfileButton/index.tsx` | E02 | [DONE] |
+| `Toast` | `src/components/Toast/index.tsx` | E02 | [DONE] — general-purpose, mounted in root layout |
+| `CardFact` | `src/components/Card/CardFact.tsx` | E04 | [DONE] |
+| `CardQuestion` | `src/components/Card/CardQuestion.tsx` | E04 | [DONE] |
+| `CardResult` | `src/components/Card/CardResult.tsx` | E04 | [DONE] |
+| `CardNext` | `src/components/Card/CardNext.tsx` | E04 | [DONE] |
+| `CardShell` | `src/components/CardShell/index.tsx` | E04 | [DONE] — shared card layout wrapper |
+| `CardSkeleton` | `src/components/CardSkeleton/index.tsx` | E04 | [DONE] |
+| `AchievementToast` | `src/components/AchievementToast/index.tsx` | E04 | [DONE] |
+| `FeedClient` | `src/components/FeedClient/index.tsx` | E04 | [DONE] — Zustand-connected feed UI |
+| `WikipediaImage` | `src/components/WikipediaImage/index.tsx` | E03 | [DONE] |
 
-**Design tokens:** All MX-Brutalist Tailwind class strings (shadows, borders, rarity colors, XP bar, etc.) are centralized in `src/lib/design-tokens.ts` (defined in E01). Import from there — never hardcode these strings in component files.
+> **Note on `CountdownTimer`:** The original spec named this `CountdownTimer`. It was implemented as `CircularTimer` in E02 (SVG circular UI). Both the shell at `src/components/CountdownTimer/index.tsx` and the real component at `src/components/CircularTimer/index.tsx` exist. Use `CircularTimer`.
+
+**Design tokens:** All MX-Brutalist Tailwind class strings (shadows, borders, rarity colors, XP bar, etc.) are centralized in `src/lib/design-tokens.ts`. Import from there — never hardcode these strings in component files.
+
+---
+
+## Zustand Stores
+
+Client-side state is managed via **Zustand v5 module-level singletons** (no context providers needed).
+
+| File | Store | Purpose |
+|------|-------|---------|
+| `src/store/feedStore.ts` | `useFeedStore` | Feed phase, card history, slide navigation, achievement queue |
+| `src/store/toastStore.ts` | `useToastStore` | Global toast message (`show(message)`, `dismiss()`) |
+
+> **Rule:** Do not create new Zustand stores without adding them to this table. Server-side state belongs in Server Components or Server Actions — Zustand is only for UI state that must survive route transitions.
 
 ---
 
 ## Server Action Contracts
 
-All mutations go through Server Actions. **Signatures are frozen after E05 merges.** E04 may stub with matching signatures.
+All mutations go through Server Actions (`'use server'`). **Signatures are frozen after E05 merges.**
 
 ```ts
 // app/actions/user.ts
-createUser(displayName: string, themes: ThemeName[], uniqueUserId: string): Promise<{ userId: string }>
+createUser(displayName: string, themes: ThemeName[], uniqueUserId: string, initialXp?: number, initialStreak?: number): Promise<{ userId: string }>
 getUserByUniqueId(uniqueUserId: string): Promise<UserDoc | null>
+completeOnboarding(userId: string, displayName: string, themes: ThemeName[]): Promise<void>
+updateUserThemes(userId: string, themes: ThemeName[]): Promise<void>
 
 // app/actions/answer.ts
 submitAnswer(userId: string, cardId: string, selectedIndex: number | null): Promise<SubmitAnswerResponse>
@@ -168,85 +224,122 @@ submitAnswer(userId: string, cardId: string, selectedIndex: number | null): Prom
 // app/actions/feed.ts
 getNextCard(userId: string): Promise<CardDoc | null>
 
-// app/actions/achievements.ts
+// app/actions/achievements.ts  (E06 — not yet implemented)
 pinBadge(userId: string, achievementKey: string): Promise<void>
 unpinBadge(userId: string, achievementKey: string): Promise<void>
 getUserAchievements(userId: string): Promise<UserAchievementDoc[]>
 
-// app/actions/profile.ts
-getUserProfile(userId: string): Promise<UserProfile & { showcasedBadges: UserAchievementDoc[]; themeScores: ThemeScoreDoc[] }>
+// app/actions/profile.ts  (E08 — not yet implemented)
+getUserProfile(userId: string): Promise<UserProfile & { showcasedBadges: UserAchievementDoc[]; themeScores: ThemeScoreDoc[] } | null>
 ```
+
+### API Route Handlers
+
+These are `/api` routes (not Server Actions) used for OAuth and session management. Internal code should use Server Actions instead.
+
+| Route | Purpose |
+|-------|---------|
+| `GET /api/auth/google` | Initiates Google OAuth redirect |
+| `GET /api/auth/google/callback` | Exchanges code, creates/links user, sets session cookie |
+| `GET /api/auth/session` | Returns `{ authenticated, user }` for client session checks |
+| `GET /api/auth/logout` | Clears session cookie and DB session record |
 
 ---
 
-## File Tree (target state)
+## File Tree (actual state as of 2026-05-28)
 
 ```
 src/
- app/
-  layout.tsx        # Root layout — dark mode, fonts, bottom nav
-  page.tsx         # Redirect → /feed or /welcome
-  welcome/
-    page.tsx       # Tutorial + registration prompt
-  feed/
-    page.tsx       # Main feed
-  achievements/
-    page.tsx       # Badge grid
-  profile/
-    page.tsx       # Profile page
-  providers.tsx       # PostHog + other client providers
-  actions/
-    user.ts
-    answer.ts
-    feed.ts
-    achievements.ts
-    profile.ts
- components/
-  BottomNav/      # mobile only (lg:hidden)
-  SideNav/       # desktop only (hidden lg:flex)
-  Card/
-    CardFact.tsx
-    CardQuestion.tsx
-    CardResult.tsx
-    CardNext.tsx
-  AchievementToast/
-  GuestBanner/
-  ReEngagementCard/
-  XpBar/
- db/
-  connect.ts
-  models/
-    User.ts
-    ThemeScore.ts
-    Card.ts
-    Answer.ts
-    UserAchievement.ts
- lib/
-  scoring/
-    formulas.ts      # Pure XP + level functions
-  achievements/
-    definitions.ts    # 17 achievement configs
-    check.ts       # Condition evaluator
-  feed/
-    algorithm.ts     # Weighted theme selection
-  pipeline/
-    generate-card.ts   # Orchestrator
-    wikipedia.ts     # Wikipedia REST API client
-    gemini.ts       # Gemini MCQ generator
-  analytics/
-    events.ts       # PostHog wrappers
- types/
-  index.ts         # Shared TypeScript types (see above)
- utils/
-  user-id.ts        # 9-digit uniqueUserId generator
- test/
-  setup.ts         # jest-dom matchers
-  utils.tsx         # custom render + providers wrapper
- env.ts            # Zod env validation
+  app/
+    layout.tsx              # Root layout — dark mode, fonts, nav, Toast
+    page.tsx                # Redirect → /feed or /welcome (ClientBootstrap)
+    ClientBootstrap.tsx     # Syncs Google user's uniqueUserId to localStorage
+    env.ts                  # Zod env validation (incl. Google OAuth vars)
+    welcome/
+      page.tsx              # Tutorial + registration prompt (Server shell)
+      WelcomeClient.tsx     # 'use client' — tutorial, decision, register phases
+    onboarding/
+      page.tsx              # Google onboarding shell (Server Component)
+      OnboardingClient.tsx  # 'use client' — display name + theme picker
+    feed/
+      page.tsx              # Main feed (Server Component)
+    profile/
+      page.tsx              # Profile stub (redesign in E08)
+    achievements/
+      page.tsx              # Badge grid (E06)
+    api/
+      auth/
+        google/route.ts          # OAuth initiation
+        google/callback/route.ts # OAuth callback + user creation
+        session/route.ts         # Session verification
+        logout/route.ts          # Session teardown
+    actions/
+      user.ts                    # createUser, getUserByUniqueId, completeOnboarding, updateUserThemes
+      answer.ts                  # submitAnswer (stub → real in E05)
+      feed.ts                    # getNextCard (stub → real in E07)
+      achievements.ts            # E06 — not yet implemented
+      profile.ts                 # E08 — not yet implemented
+  components/
+    BottomNav/
+    SideNav/
+    ThemeToggle/
+    Logo/
+    AppBar/
+    Card/
+      CardFact.tsx
+      CardQuestion.tsx
+      CardResult.tsx
+      CardNext.tsx
+    CardShell/
+    CardSkeleton/
+    AchievementToast/
+    FeedClient/
+    GuestBanner/
+    ReEngagementCard/
+    CircularTimer/
+    CountdownTimer/             # Shell only — use CircularTimer instead
+    ThemePicker/
+    UserProfileButton/
+    Toast/                      # General-purpose toast, mounted in layout
+    WikipediaImage/
+    XpBar/                      # Shell — E08 fills implementation
+    ProfileClient/              # Stub — E08 redesigns
+  db/
+    connect.ts
+    models/
+      User.ts                   # googleId, email fields added in E02
+      ThemeScore.ts
+      Card.ts
+      Answer.ts
+      UserAchievement.ts
+      Session.ts                # Added in E02 for Google OAuth sessions
+  lib/
+    design-tokens.ts            # All MX-Brutalist class string constants
+    guest-state.ts              # localStorage helpers (uniqueUserId, guestOnly flags)
+    session.ts                  # createSession, getSession, deleteSession
+    theme.tsx                   # next-themes provider wrapper
+    utils.ts                    # shadcn/ui cn() utility
+    pipeline/
+      generate-card.ts          # Orchestrator — Wikipedia → Gemini → MongoDB
+      wikipedia.ts              # Wikipedia REST API client
+      gemini.ts                 # Gemini MCQ generator
+      theme-keywords.ts         # Theme → search keyword map
+  store/
+    feedStore.ts                # Zustand — feed phase, card history, nav
+    toastStore.ts               # Zustand — global toast message
+  types/
+    index.ts                    # All canonical shared types (see above)
+  utils/
+    user-id.ts                  # 9-digit uniqueUserId generator
+    validators.ts               # validateDisplayName, DISPLAY_NAME_MAX_LENGTH
+    xp.ts                       # getLevelFromXp, getXpProgress utilities
+  test/
+    setup.ts                    # jest-dom matchers
+    utils.tsx                   # custom render + providers wrapper
 
 .github/
- workflows/
-   ci.yml          # E11 — type-check + unit-tests + coverage gate
+  workflows/
+    ci.yml                      # type-check + unit-tests + coverage gate (≥80%)
 ```
 
 ---
@@ -256,11 +349,13 @@ src/
 Every agent must have these in `.env.local`. All are validated at startup via Zod in `src/env.ts`.
 
 ```
-MONGODB_URI          # MongoDB Atlas connection string
-GEMINI_API_KEY        # Google Gemini API key
-NEXT_PUBLIC_APP_URL      # Production URL
-NEXT_PUBLIC_POSTHOG_KEY    # PostHog project API key
-NEXT_PUBLIC_POSTHOG_HOST   # https://app.posthog.com
+MONGODB_URI              # MongoDB Atlas connection string
+GEMINI_API_KEY           # Google Gemini API key
+NEXT_PUBLIC_APP_URL      # Production URL (e.g. https://gabutin.app)
+NEXT_PUBLIC_POSTHOG_KEY  # PostHog project API key
+NEXT_PUBLIC_POSTHOG_HOST # https://app.posthog.com
+GOOGLE_CLIENT_ID         # Google OAuth 2.0 client ID
+GOOGLE_CLIENT_SECRET     # Google OAuth 2.0 client secret
 ```
 
 ---
@@ -277,6 +372,7 @@ Summary of critical rules every agent must follow:
 - **Feed card width:** `max-w-md` always — phone-viewport column on desktop too.
 - **Icons:** Lucide React only. Emoji allowed on achievement badges only.
 - **Fonts in `@theme inline`:** Literal strings, not `var()` references.
+- **CSS custom tokens:** `--card-stroke` and `--shadow` are set in dark/light mode via globals.css. Use `border-(--color-card-stroke)` and `shadow-[..._var(--color-shadow)]` — never hardcode `black` or a hex.
 
 ## Theme Design System — MX-Brutalist
 
@@ -299,9 +395,9 @@ Installed via: `pnpm dlx shadcn@latest add https://tweakcn.com/r/themes/cmllfu8o
 ```css
 /* globals.css — correct */
 @theme inline {
- --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
- --font-serif: "Lora", ui-serif, serif;
- --font-mono: "Space Mono", ui-monospace, monospace;
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", ui-serif, serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
 }
 ```
 
@@ -320,18 +416,12 @@ Installed via: `pnpm dlx shadcn@latest add https://tweakcn.com/r/themes/cmllfu8o
 | `@testing-library/jest-dom` | DOM assertion matchers |
 | `jsdom` | Browser environment for Vitest |
 
-### Install command (E01 sets this up)
-
-```bash
-pnpm add -D vitest @vitejs/plugin-react @testing-library/react @testing-library/user-event @testing-library/jest-dom jsdom
-```
-
 ### Run commands
 
 ```bash
-rtk vitest run     # all tests, failures only
+rtk vitest run            # all tests, failures only
 rtk vitest run --coverage # with coverage report
-vitest watch      # watch mode during development
+vitest watch              # watch mode during development
 ```
 
 ### Coverage requirement
@@ -340,7 +430,7 @@ vitest watch      # watch mode during development
 
 ### Test file location
 
-Co-located with source: `src/lib/scoring/formulas.test.ts`, `src/components/CardFact/CardFact.test.tsx`.
+Co-located with source: `src/lib/pipeline/gemini.test.ts`, `src/components/Card/CardFact.test.tsx`.
 
 ### What to test per layer
 
@@ -350,20 +440,6 @@ Co-located with source: `src/lib/scoring/formulas.test.ts`, `src/components/Card
 | Server Actions | Integration — real DB | Use test MongoDB instance |
 | React components | Component — jsdom | Mock Server Actions |
 | API clients (Wikipedia, Gemini) | Unit | Mock `fetch` / SDK calls |
-
-### Test utilities (`src/test/utils.tsx`)
-
-```tsx
-import { render, type RenderOptions } from '@testing-library/react'
-import type { ReactElement } from 'react'
-
-function customRender(ui: ReactElement, options?: RenderOptions) {
- return render(ui, { ...options })
-}
-
-export * from '@testing-library/react'
-export { customRender as render }
-```
 
 ### TDD discipline
 
@@ -376,14 +452,16 @@ export { customRender as render }
 ## Shared Conventions
 
 - **Language:** TypeScript strict. No `any`. No `@ts-ignore`.
-- **'use client':** Only on components that use browser APIs, event handlers, or React state — never at page level.
-- **Server Actions:** All mutations. No `/api` routes for internal use.
+- **`'use client'`:** Only on components that use browser APIs, event handlers, or React state — never at page level.
+- **Server Actions:** All mutations. No `/api` routes for internal use (OAuth flow is the exception).
 - **DB reads in RSC:** Call DB/model directly (no fetch). Use `.lean()` for read-only queries.
 - **Imports:** Use `@/` path alias for `src/`.
 - **No default exports on Server Actions** — named exports only.
 - **Styling:** Tailwind utility classes. No inline styles. No CSS modules. Use shadcn/ui components as base.
-- **Dark mode:** Class-based (`class="dark"`), set on `<html>` by default.
-- **Theme:** MX-Brutalist — 0px radius everywhere, hard shadows, teal/orange/gold. Do not add `rounded-*` classes unless it's inside a custom override.
+- **Dark mode:** Class-based, managed by `next-themes`. Default: `dark`. Never hardcode `className="dark"` on `<html>`.
+- **Theme:** MX-Brutalist — 0px radius everywhere, hard shadows, teal/orange/gold. Never add `rounded-*` classes.
+- **`window` → `globalThis`:** Use `globalThis.location.href`, `globalThis.getComputedStyle()` etc. for SSR-safe browser API access.
+- **Async fire-and-forget:** Replace `void promise` with `promise.catch(() => {})` to avoid Sonar violations.
 - **Copy language:** Bahasa Indonesia with casual English mix ("lo/gue" not "kamu/saya"). See product-design.md §5 for copy examples.
 - **No console.log in production** — structured logging or remove before merge.
 
@@ -391,19 +469,19 @@ export { customRender as render }
 
 ## Integration Checklist (run before E10)
 
-- [ ] All 5 Mongoose models importable without TS error
+- [ ] All 6 Mongoose models importable without TS error
 - [ ] `pnpm build` passes with no type errors
-- [ ] `.github/workflows/ci.yml` exists (ships with E01) and all three jobs pass on `main`
-- [ ] Branch protection enabled on `main` after E01 merges (TypeScript + Unit Tests + Coverage Gate required)
+- [ ] `.github/workflows/ci.yml` exists and all three jobs pass on `main`
+- [ ] Branch protection active on `main` (TypeScript + Unit Tests + Coverage Gate required)
 - [ ] `rtk vitest run` passes with zero failures
 - [ ] `rtk vitest run --coverage` reports ≥80% on all epic files
 - [ ] `submitAnswer` returns `SubmitAnswerResponse` shape (not stub)
 - [ ] `getNextCard` returns real card from DB (not hardcoded)
 - [ ] Achievement toast fires on first correct answer
 - [ ] Level-up animation fires when XP threshold crossed
-- [ ] No card shown twice to same user
+- [ ] No card shown twice to same user (E07 feed algorithm + `seenCardIds`)
 - [ ] Guest banner visible when no DB record
-- [ ] /profile renders without client-side data fetch
+- [ ] `/profile` renders without `'use client'` on page.tsx
 - [ ] PostHog `card_answered` event fires with required properties
 - [ ] PWA manifest valid (Chrome DevTools → Application)
 - [ ] `docker build` succeeds
