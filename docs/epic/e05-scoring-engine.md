@@ -27,6 +27,7 @@ Scoring is the reward loop that drives retention — every correct answer must f
 2. **`submitAnswer` Server Action:**
   - Fetch `User` and relevant `ThemeScore` from DB
   - Determine `result`: if `selectedIndex === card.correctIndex` → `'correct'`; if `selectedIndex === null` → `'skip'`; else `'wrong'`
+  - **First-attempt XP guard:** check if an `Answer` doc already exists for `(userId, cardId)`. If one exists, set `xpDelta = 0`. `pointsDelta`, streak, and `totalAnswers` still update normally — only XP is suppressed on repeats.
   - Compute `pointsDelta` and `xpDelta` using formula functions
   - Update `ThemeScore.points` (floor at 0)
   - Update `User.xp`, `User.level`, `User.currentStreak`, `User.totalAnswers`, `User.totalSkips`
@@ -34,6 +35,7 @@ Scoring is the reward loop that drives retention — every correct answer must f
   - Return `SubmitAnswerResponse` (achievement checking returns empty array — E06 wires in later)
 3. **Streak rules:** correct → streak + 1; wrong or skip → streak = 0
 4. **Theme points floor:** `Math.max(0, currentPoints + pointsDelta)` — never negative
+5. **Client-side option shuffle:** In `CardQuestion`, shuffle the options array on each mount using Fisher-Yates (seeded by `card._id` so the order is stable within a single card view but differs across visits). Remap `correctIndex` to match the shuffled order before passing `selectedIndex` to `submitAnswer`.
 
 ---
 
@@ -137,6 +139,10 @@ await Answer.create({ userId, cardId, theme, result, pointsDelta, xpDelta })
 - [ ] `User.xp` and `User.level` updated in DB after call
 - [ ] `ThemeScore.points` updated (and floored at 0) in DB after call
 - [ ] `leveledUp: true` when XP crosses a level threshold
+- [ ] Answering the same card a second time awards `xpDelta = 0`; `Answer` record is still written
+- [ ] `pointsDelta` and streak still update normally on repeat answers
+- [ ] MCQ options in `CardQuestion` are displayed in a shuffled order on each mount
+- [ ] The shuffled `selectedIndex` maps correctly back to the original `correctIndex` — scoring is unaffected
 
 ---
 
@@ -147,6 +153,8 @@ await Answer.create({ userId, cardId, theme, result, pointsDelta, xpDelta })
 - DB writes: `Answer.create`, `User.updateOne`, `ThemeScore.updateOne`
 - Level title lookup
 - `leveledUp` flag computation
+- First-attempt XP guard: `Answer.exists({ userId, cardId })` check before awarding XP
+- Client-side option shuffle in `src/components/Card/CardQuestion.tsx` (Fisher-Yates, stable within session)
 
 ---
 
@@ -217,6 +225,7 @@ Expected: all 20+ assertions passing.
 - Achievement checking — E06 wires into this action later; return `[]` for now
 - Feed algorithm — E07 owns card selection
 - `seenCardIds` update — E07 owns that (on `getNextCard`, not on `submitAnswer`)
+- Preventing the *same card from appearing* in the feed — E07 owns dedup at the feed level; E05 only suppresses XP on repeat answers
 - No bonus XP beyond the streak tiers defined above
 - Do not add per-theme XP — only `user.xp` is global
 - Do not implement transactions (free tier Atlas, overkill for hackathon)

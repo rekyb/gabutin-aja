@@ -1,13 +1,13 @@
 # E02 — Guest Identity & Onboarding
 
-**Status:** [~] In Progress — Gate 3 pending
+**Status:** [x] Done — superseded by Google OAuth integration (Session 12–13)
 **Wave:** 2 (start after E01)
 
 ---
 
 ## Implementation Log
 
-### Completed
+### Completed (Original Spec)
 - `src/app/welcome/page.tsx` + `WelcomeClient.tsx` — full 3-card tutorial (fact → question → result phases)
 - `src/utils/user-id.ts` — 9-digit `uniqueUserId` generation
 - `src/utils/validators.ts` — `validateDisplayName` (alphanumeric, 3–20 chars, profanity filter)
@@ -21,19 +21,23 @@
 - Theme picker enforces exactly 3 selections
 - Display name validation wired on client + server
 
-### Added Beyond Original Spec
+### Added Beyond Original Spec (Sessions 11–13)
 - **10s countdown timer** on tutorial questions with circular SVG UI and auto-expire (timeout treated as wrong)
 - **`--card-stroke` / `--shadow` CSS tokens** — neon green shadow+border in dark mode, black in light
 - **XP leveling utility** (`src/utils/xp.ts`) shared across components
 - `createUser` signature extended: `initialXp = 0, initialStreak = 0` (backward-compatible)
+- **Skip on tutorial questions** — `selectedAnswer = -2`, SKIP badge, "Di-skip nih! Jangan kebiasaan ya" copy; result border uses `BORDER_SKIP`
+- **Slide-up animation on "Lanjut"** — `animateTransition(doNav)` wraps `handleNext`; double-`requestAnimationFrame` pattern from feed; progress badge stays pinned outside animated wrapper
+- **Google OAuth decision screen** — "Masuk pake Google" (primary, white Google button) + "Jadi tamu aja" (outlined, leads to manual register form). "Main sebagai tamu dulu" button and `handleSkip` function **removed** — pure guest path without DB no longer exists.
+- **`/onboarding` route** (NEW, `src/app/onboarding/`) — Server Component reads session + user from DB. `OnboardingClient` shows DiceBear avatar (NOT Google photo), editable display name, ThemePicker. Calls `completeOnboarding(userId, displayName, themes)` on submit → `/feed?toast=google`.
+- **`completeOnboarding` server action** — atomically updates `User.displayName` + `User.themes`, rebuilds `ThemeScore` records
+- **Toast system** — `src/store/toastStore.ts` + `src/components/Toast/index.tsx` mounted in layout. Programmatic (`showToast(msg)`) + URL-param (`?toast=key`) triggers. Messages: `google` = "Gaskeun! Akun lo udah aktif", `google_returning` = "Eh lo balik lagi! Selamat gabut", manual register = "Halo [name]! Selamat gabut bareng kita"
+- **Google callback routing** — `isNewUser` flag: new → `/onboarding`; returning → `/feed?toast=google_returning`
+- **`ClientBootstrap`** updated — session API check syncs Google user's `uniqueUserId` to localStorage; `clearGuestOnly()` on authenticated session
 
-### Pending (not yet implemented)
-- [ ] First-visit detection in root layout / `ClientBootstrap` — redirect to `/welcome` if no `uniqueUserId`
-- [ ] Returning-user detection — if `uniqueUserId` + DB record exist, skip `/welcome` → `/feed`
-- [ ] `GuestBanner` implementation (shell exists at `src/components/GuestBanner/index.tsx`)
-- [ ] `ReEngagementCard` implementation (shell exists at `src/components/ReEngagementCard/index.tsx`)
-- [ ] `scripts/seed-tutorial.ts` — seed the 3 tutorial cards into MongoDB
-- [ ] Unit tests: `user-id`, `GuestBanner`, `ReEngagementCard` (see Tests section below)
+### Superseded / Removed
+- **"Main sebagai tamu dulu" path** — removed; pure localStorage-only guest flow (no DB record) is discontinued in favor of the Google + manual register dual path
+- **`GuestBanner` / `ReEngagementCard`** — deprioritized; guest-only state no longer reachable via `/welcome` (re-engagement card still injected by feed via `checkReEngagement()` in `feedStore`)
 
 ---
 
@@ -233,7 +237,7 @@ Run: `rtk vitest run src/utils/user-id.test.ts src/components/GuestBanner src/co
 
 ## Out of Scope / Guardrails
 
-- No OAuth, email, or password auth (v1.x)
+- ~~No OAuth, email, or password auth (v1.x)~~ — **superseded**: Google OAuth implemented in Session 12–13
 - No display name uniqueness check (names are not unique by design)
 - No avatar upload or customization
 - Re-engagement card is injected by feed logic — this epic builds the **component** and the **localStorage tracking**; E04 handles injection into the feed

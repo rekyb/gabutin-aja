@@ -3,6 +3,7 @@ import { Montserrat, Lora, Space_Mono } from 'next/font/google'
 import { AppBar } from '@/components/AppBar'
 import { BottomNav } from '@/components/BottomNav'
 import { SideNav } from '@/components/SideNav'
+import { Toast } from '@/components/Toast'
 import { Providers } from './providers'
 import { ClientBootstrap } from './ClientBootstrap'
 import './globals.css'
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </main>
           </div>
           <BottomNav className="lg:hidden" />
+          <Toast />
         </Providers>
       </body>
     </html>

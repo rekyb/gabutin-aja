@@ -7,17 +7,17 @@ vi.mock('next/navigation', () => ({
 }))
 
 describe('BottomNav', () => {
-  it('renders FYP, Flex, and Profil links', () => {
+  it('renders FYP, Flexing, and Profil links', () => {
     render(<BottomNav className="" />)
     expect(screen.getByRole('link', { name: /fyp/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /flex/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /flexing/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /profil/i })).toBeInTheDocument()
   })
 
   it('has correct hrefs', () => {
     render(<BottomNav className="" />)
     expect(screen.getByRole('link', { name: /fyp/i })).toHaveAttribute('href', '/feed')
-    expect(screen.getByRole('link', { name: /flex/i })).toHaveAttribute('href', '/achievements')
+    expect(screen.getByRole('link', { name: /flexing/i })).toHaveAttribute('href', '/achievements')
     expect(screen.getByRole('link', { name: /profil/i })).toHaveAttribute('href', '/profile')
   })
 })

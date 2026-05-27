@@ -1,16 +1,18 @@
 'use client'
-import { useState, useEffect, type ReactNode } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, BookOpen, X, Check, Flame, Sparkles } from 'lucide-react'
+import { BookOpen, X, Check, Flame, Sparkles } from 'lucide-react'
 import { ThemePicker } from '@/components/ThemePicker'
-import { WikipediaImage } from '@/components/WikipediaImage'
 import { createUser } from '@/app/actions/user'
 import { generateUniqueUserId } from '@/utils/user-id'
-import { getUniqueUserId, setUniqueUserId, setGuestOnly, setGuestProgress } from '@/lib/guest-state'
-import { MCQ_OPTION, BUTTON_PRESS, BORDER_CORRECT, BORDER_WRONG } from '@/lib/design-tokens'
+import { getUniqueUserId, setUniqueUserId } from '@/lib/guest-state'
+import { MCQ_OPTION, BUTTON_PRESS, BORDER_CORRECT, BORDER_WRONG, BORDER_SKIP } from '@/lib/design-tokens'
 import { CircularTimer } from '@/components/CircularTimer'
+import { CardShell } from '@/components/CardShell'
 import type { ThemeName } from '@/types'
 import { validateDisplayName, DISPLAY_NAME_MAX_LENGTH } from '@/utils/validators'
+import { useFeedStore } from '@/store/feedStore'
+import { useToastStore } from '@/store/toastStore'
 
 interface TutorialCard {
   fact: string
@@ -47,76 +49,51 @@ const TUTORIAL_CARDS: TutorialCard[] = [
 type Phase = 'tutorial' | 'decision' | 'register'
 type CardPhase = 'fact' | 'question' | 'result'
 
-// ─── Phone-frame card shell ──────────────────────────────────────────────────
-// Mobile : 4:3 image stacked above content, max-w-md
-// Desktop: portrait phone frame (390px wide, ~100dvh tall), image fills top 45%,
-//          content panel occupies bottom 55%. Action button is always pinned to
-//          the bottom of the content panel, outside the scrollable body area.
-function CardShell({
-  sourceUrl,
-  borderOverride,
-  progress,
-  action,
-  timer,
-  streakSlot,
-  className,
-  hideImage,
-  children,
-}: Readonly<{
-  sourceUrl: string
-  borderOverride?: string
-  progress?: ReactNode
-  action?: ReactNode
-  timer?: ReactNode
-  streakSlot?: ReactNode
-  className?: string
-  hideImage?: boolean
-  children: ReactNode
-}>) {
-  const border = borderOverride ?? 'border-2 border-[var(--color-card-stroke)] shadow-[4px_4px_0px_0px_var(--color-shadow)]'
-  const hasHeader = timer || streakSlot
-  return (
-    <div
-      className={[
-        'bg-sidebar overflow-hidden flex flex-col',
-        border,
-        'w-full max-w-[490px] flex-1 min-h-0',
-        'lg:w-[430px] lg:max-w-none lg:max-h-[820px]',
-        className ?? '',
-      ].join(' ')}
-    >
-      {/* Image — hidden when hideImage is true */}
-      <div className={`${hideImage ? 'hidden' : ''} aspect-3/1 lg:aspect-auto lg:h-[45%] shrink-0 overflow-hidden relative`}>
-        <WikipediaImage sourceUrl={sourceUrl} className="w-full h-full" />
+const SLIDE_MS = 240
 
-        {progress && (
-          <div className="absolute top-3 left-3 hidden lg:flex items-center gap-1.5 bg-black/60 px-2 py-1">
-            {progress}
-          </div>
-        )}
-      </div>
-
-      {/* Content panel: scrollable body + pinned action */}
-      <div className="flex-1 lg:h-[55%] flex flex-col overflow-hidden p-6 gap-4">
-        {/* Timer + streak header row */}
-        {hasHeader && (
-          <div className="shrink-0 flex items-center justify-between border-b-2 border-border pb-4">
-            <div>{timer ?? <div />}</div>
-            <div>{streakSlot ?? <div />}</div>
-          </div>
-        )}
-        {/* Scrollable body — grows, scrolls if content overflows */}
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-4">{children}</div>
-        {/* Action button — always pinned to bottom */}
-        {action && <div className="shrink-0">{action}</div>}
-      </div>
-    </div>
+function FeedbackBadge({ selected, correct }: { readonly selected: number | null; readonly correct: number }) {
+  if (selected === correct) return (
+    <span className="font-sans font-black text-sm text-primary flex items-center gap-1.5 uppercase">
+      <Check className="h-4 w-4 stroke-3" /> BENAR!
+    </span>
   )
+  if (selected === -1) return (
+    <span className="font-sans font-black text-sm text-muted-foreground flex items-center gap-1.5 uppercase">
+      <X className="h-4 w-4 stroke-3" /> TIMEOUT!
+    </span>
+  )
+  if (selected === -2) return (
+    <span className="font-sans font-black text-sm text-muted-foreground flex items-center gap-1.5 uppercase">
+      <X className="h-4 w-4 stroke-3" /> SKIP!
+    </span>
+  )
+  if (selected !== null) return (
+    <span className="font-sans font-black text-sm text-secondary flex items-center gap-1.5 uppercase">
+      <X className="h-4 w-4 stroke-3" /> SALAH!
+    </span>
+  )
+  return null
+}
+
+function ResultMessage({ selected, correct }: { readonly selected: number; readonly correct: number }) {
+  if (selected === correct) return (
+    <>
+      <p className="font-sans font-extrabold text-3xl text-primary tracking-wide">+3 XP</p>
+      <p className="font-sans font-bold text-lg text-foreground flex items-center gap-2">
+        Nah bener! Menyala ilmu lo! <Sparkles className="h-5 w-5 text-accent fill-accent" />
+      </p>
+    </>
+  )
+  if (selected === -1) return <p className="font-sans font-bold text-lg text-foreground">Waktunya habis! Yuk fokus dikit</p>
+  if (selected === -2) return <p className="font-sans font-bold text-lg text-foreground">Di-skip nih! Jangan kebiasaan ya</p>
+  return <p className="font-sans font-bold text-lg text-foreground">Salah woi! Baca dulu nih</p>
 }
 
 // ─── Main component ──────────────────────────────────────────────────────────
 export function WelcomeClient() {
   const router = useRouter()
+  const resetFeed = useFeedStore((s) => s.reset)
+  const showToast = useToastStore((s) => s.show)
   const [phase, setPhase] = useState<Phase>('tutorial')
   const [cardIndex, setCardIndex] = useState(0)
   const [cardPhase, setCardPhase] = useState<CardPhase>('fact')
@@ -128,6 +105,10 @@ export function WelcomeClient() {
   const [streak, setStreak] = useState(0)
   const [tutorialXp, setTutorialXp] = useState(0)
   const [timeLeft, setTimeLeft] = useState(10)
+
+  const [slideOffset, setSlideOffset] = useState(0)
+  const [slideAnimated, setSlideAnimated] = useState(true)
+  const navigatingRef = useRef(false)
 
   const XP_PER_CORRECT = 10
 
@@ -155,28 +136,6 @@ export function WelcomeClient() {
 
   const card = TUTORIAL_CARDS[cardIndex]
 
-  // Feedback badge definition to avoid nested ternary operations in JSX rendering
-  let feedbackBadge: ReactNode = null
-  if (selectedAnswer === card.correctIndex) {
-    feedbackBadge = (
-      <span className="font-sans font-black text-sm text-primary flex items-center gap-1.5 uppercase">
-        <Check className="h-4 w-4 stroke-3" /> BENAR!
-      </span>
-    )
-  } else if (selectedAnswer === -1) {
-    feedbackBadge = (
-      <span className="font-sans font-black text-sm text-secondary flex items-center gap-1.5 uppercase">
-        <X className="h-4 w-4 stroke-3" /> WAKTU HABIS!
-      </span>
-    )
-  } else if (selectedAnswer !== null) {
-    feedbackBadge = (
-      <span className="font-sans font-black text-sm text-secondary flex items-center gap-1.5 uppercase">
-        <X className="h-4 w-4 stroke-3" /> SALAH!
-      </span>
-    )
-  }
-
   function handleAnswerSelect(index: number) {
     if (cardPhase !== 'question') return
     setSelectedAnswer(index)
@@ -187,6 +146,32 @@ export function WelcomeClient() {
       setStreak(0)
     }
     setCardPhase('result')
+  }
+
+  function handleSkipQuestion() {
+    if (cardPhase !== 'question') return
+    setStreak(0)
+    setSelectedAnswer(-2)
+    setCardPhase('result')
+  }
+
+  function completeTransition() {
+    setSlideAnimated(true)
+    setSlideOffset(0)
+    setTimeout(() => { navigatingRef.current = false }, SLIDE_MS)
+  }
+
+  function animateTransition(doNav: () => void) {
+    if (navigatingRef.current) return
+    navigatingRef.current = true
+    setSlideAnimated(true)
+    setSlideOffset(-105)
+    setTimeout(() => {
+      doNav()
+      setSlideAnimated(false)
+      setSlideOffset(105)
+      requestAnimationFrame(() => requestAnimationFrame(completeTransition))
+    }, SLIDE_MS)
   }
 
   function handleNext() {
@@ -207,17 +192,14 @@ export function WelcomeClient() {
     setError(null)
     try {
       await createUser(displayName.trim(), selectedThemes, uid, tutorialXp, streak)
+      resetFeed()
+      showToast(`Halo ${displayName.trim()}! Selamat gabut bareng kita`)
+      router.refresh()
       router.push('/feed')
     } catch {
       setError('Gagal menyimpan. Coba lagi.')
       setIsSubmitting(false)
     }
-  }
-
-  function handleSkip() {
-    setGuestOnly()
-    setGuestProgress({ xp: tutorialXp, currentStreak: streak, totalAnswers: cardIndex + 1 })
-    router.push('/feed')
   }
 
   // Progress badge content — used on mobile (outside card) and desktop (overlaid)
@@ -232,9 +214,17 @@ export function WelcomeClient() {
   if (phase === 'tutorial') {
     return (
       // Full-height centering on desktop, normal scroll on mobile
-      <div className="h-[calc(100dvh-8rem)] lg:h-dvh flex flex-col items-center justify-center gap-4 p-4 lg:p-6 overflow-hidden">
+      <div className="h-[calc(100dvh-8rem)] lg:h-dvh flex flex-col items-center p-4 lg:p-6 overflow-hidden">
         {/* Mobile-only progress indicator (desktop version is overlaid on image) */}
-        <div className="lg:hidden">{progressBadge}</div>
+        <div className="lg:hidden mb-4">{progressBadge}</div>
+
+        <div
+          className="w-full flex-1 min-h-0 flex flex-col items-center justify-center"
+          style={{
+            transform: `translateY(${slideOffset}vh)`,
+            transition: slideAnimated ? `transform ${SLIDE_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)` : 'none',
+          }}
+        >
 
         {cardPhase === 'fact' && (
           <CardShell
@@ -245,7 +235,7 @@ export function WelcomeClient() {
                 onClick={() => setCardPhase('question')}
                 className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border`}
               >
-                Siap Dites! <ChevronRight className="inline h-4 w-4" />
+                Kuis!
               </button>
             }
           >
@@ -287,6 +277,13 @@ export function WelcomeClient() {
                 </button>
               ))}
             </div>
+
+            <button
+              onClick={handleSkipQuestion}
+              className={`${BUTTON_PRESS} text-muted-foreground font-mono text-xs border border-border px-3 py-1.5 hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+            >
+              Skip
+            </button>
           </CardShell>
         )}
 
@@ -294,41 +291,26 @@ export function WelcomeClient() {
           <CardShell
             sourceUrl={card.sourceUrl}
             progress={progressBadge}
-            borderOverride={selectedAnswer === card.correctIndex ? BORDER_CORRECT : BORDER_WRONG}
+            borderOverride={selectedAnswer === card.correctIndex ? BORDER_CORRECT : (selectedAnswer === -1 || selectedAnswer === -2) ? BORDER_SKIP : BORDER_WRONG}
             action={
               <button
-                onClick={handleNext}
+                onClick={() => animateTransition(handleNext)}
                 className={`${BUTTON_PRESS} w-full bg-transparent text-primary font-mono font-bold py-3 border-2 border-primary hover:bg-primary hover:text-primary-foreground transition-colors`}
               >
-                {cardIndex < TUTORIAL_CARDS.length - 1 ? 'Gaskeun!' : 'Lanjutin'}{' '}
-                <ChevronRight className="inline h-4 w-4" />
+                Lanjut
               </button>
             }
           >
             {/* Top header bar */}
             <div className="flex justify-between items-center pb-2 border-b-2 border-border/20 font-mono text-xs mb-4">
-              {feedbackBadge}
+              <FeedbackBadge selected={selectedAnswer} correct={card.correctIndex} />
               <span className="font-sans font-bold text-foreground flex items-center gap-1">
                 Streak: <Flame className="h-4 w-4 text-secondary fill-secondary" /> {streak}
               </span>
             </div>
 
-            {/* Score Delta & Text section */}
             <div className="space-y-4">
-              {selectedAnswer === card.correctIndex ? (
-                <>
-                  <p className="font-sans font-extrabold text-3xl text-primary tracking-wide">
-                    +3 XP
-                  </p>
-                  <p className="font-sans font-bold text-lg text-foreground flex items-center gap-2">
-                    Nah bener! Menyala ilmu lo! <Sparkles className="h-5 w-5 text-accent fill-accent" />
-                  </p>
-                </>
-              ) : (
-                <p className="font-sans font-bold text-lg text-foreground">
-                  Salah woi! Baca dulu nih
-                </p>
-              )}
+              <ResultMessage selected={selectedAnswer} correct={card.correctIndex} />
 
               {/* Blockquote with explanation */}
               <div className="border-l-4 border-border/40 pl-4 py-1">
@@ -339,6 +321,8 @@ export function WelcomeClient() {
             </div>
           </CardShell>
         )}
+
+        </div>
       </div>
     )
   }
@@ -359,16 +343,23 @@ export function WelcomeClient() {
           </p>
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => setPhase('register')}
-              className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border`}
+              onClick={() => { globalThis.location.href = `/api/auth/google?guest_uid=${uid}` }}
+              className={`${BUTTON_PRESS} w-full bg-white text-black font-mono font-bold py-3 border-2 border-border flex items-center justify-center`}
             >
-              Simpan &amp; Daftar
+              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
+              </svg>
+              Masuk pake Google
             </button>
+
             <button
-              onClick={handleSkip}
-              className="font-mono text-sm text-muted-foreground underline"
+              onClick={() => setPhase('register')}
+              className={`${BUTTON_PRESS} w-full bg-transparent text-primary font-mono font-bold py-3 border-2 border-primary hover:bg-primary hover:text-primary-foreground transition-colors`}
             >
-              Main sebagai tamu dulu
+              Jadi tamu aja
             </button>
           </div>
         </div>
@@ -423,6 +414,25 @@ export function WelcomeClient() {
           className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           {isSubmitting ? 'Menyimpan...' : 'Mulai Gabutin →'}
+        </button>
+
+        <div className="relative flex py-2 items-center">
+          <div className="flex-grow border-t border-border/40"></div>
+          <span className="flex-shrink mx-4 text-xs font-mono text-muted-foreground">ATAU</span>
+          <div className="flex-grow border-t border-border/40"></div>
+        </div>
+
+        <button
+          onClick={() => { globalThis.location.href = `/api/auth/google?guest_uid=${uid}` }}
+          className={`${BUTTON_PRESS} w-full bg-white text-black font-mono font-bold py-3 border-2 border-border flex items-center justify-center`}
+        >
+          <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
+          </svg>
+          Masuk dengan Google
         </button>
       </div>
     </div>

@@ -10,7 +10,7 @@ interface BottomNavProps {
 
 const links = [
   { href: '/feed', label: 'FYP', icon: Home },
-  { href: '/achievements', label: 'Flex', icon: Trophy },
+  { href: '/achievements', label: 'Flexing', icon: Trophy },
   { href: '/profile', label: 'Profil', icon: User },
 ]
 
