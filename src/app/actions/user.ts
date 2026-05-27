@@ -4,12 +4,17 @@ import { connectDB } from '@/db/connect'
 import { User, type IUser } from '@/db/models/User'
 import { ThemeScore } from '@/db/models/ThemeScore'
 import type { ThemeName } from '@/types'
+import { validateDisplayName } from '@/utils/validators'
 
 export async function createUser(
   displayName: string,
   themes: ThemeName[],
   uniqueUserId: string,
+  initialXp = 0,
+  initialStreak = 0,
 ): Promise<{ userId: string }> {
+  const validation = validateDisplayName(displayName)
+  if (!validation.isValid) throw new Error(validation.error || 'Invalid display name')
   if (themes.length !== 3) throw new Error('Exactly 3 themes required')
 
   await connectDB()
@@ -18,9 +23,9 @@ export async function createUser(
     uniqueUserId,
     displayName,
     themes,
-    xp: 0,
+    xp: initialXp,
     level: 1,
-    currentStreak: 0,
+    currentStreak: initialStreak,
     consecutiveWrongs: 0,
     totalAnswers: 0,
     totalSkips: 0,

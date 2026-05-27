@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Trophy, User2 } from 'lucide-react'
+import { Home, Trophy, User } from 'lucide-react'
 import type { FC } from 'react'
 
 interface BottomNavProps {
@@ -9,9 +9,9 @@ interface BottomNavProps {
 }
 
 const links = [
-  { href: '/feed', label: 'Gabutin', icon: Home },
-  { href: '/achievements', label: 'Lencana', icon: Trophy },
-  { href: '/profile', label: 'Profil Gue', icon: User2 },
+  { href: '/feed', label: 'FYP', icon: Home },
+  { href: '/achievements', label: 'Flex', icon: Trophy },
+  { href: '/profile', label: 'Profil', icon: User },
 ]
 
 export const BottomNav: FC<BottomNavProps> = ({ className }) => {
@@ -19,18 +19,20 @@ export const BottomNav: FC<BottomNavProps> = ({ className }) => {
 
   return (
     <nav
-      className={`fixed bottom-0 left-0 right-0 z-40 bg-background border-t-2 border-border ${className ?? ''}`}
+      className={`fixed bottom-0 left-0 right-0 z-40 h-16 bg-sidebar ${className ?? ''}`}
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <ul className="flex h-20 items-center justify-around">
+      <ul className="flex h-full">
         {links.map(({ href, label, icon: Icon }) => {
           const active = pathname === href
           return (
-            <li key={href}>
+            <li key={href} className="flex-1 h-full">
               <Link
                 href={href}
-                className={`flex flex-col items-center gap-1 px-4 py-2 text-xs font-bold transition-colors ${
-                  active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                className={`flex flex-col items-center justify-center h-full gap-1 font-bold transition-colors ${
+                  active ? 'text-primary opacity-100' : 'text-foreground opacity-60'
                 }`}
+                style={{ fontSize: '0.65rem' }}
               >
                 <Icon className="h-5 w-5" />
                 {label}

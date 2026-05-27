@@ -93,7 +93,7 @@ For every epic or feature task, execute these steps **in order** before creating
 
 - **Branch Naming:** `type/e[XX]-short-description` (e.g. `feat/e01-project-foundation`).
 - **Commit Format:** Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`). One logical change per commit.
-- **Pull Requests:** Check remote `main` branch, run strict QA checks, push branch, open PR, and close issue via GitHub MCP.
+- **Pull Requests:** Check remote `main` branch, run strict QA checks, push branch, open PR, and close issue via GitHub MCP. Always assign the PR to `rekyb` (the repo owner) as assignee.
 - **CI Protection:** Protected `main` branch requires TypeScript, Unit Tests, and Coverage (≥80%) GHA checks to pass.
 
 ---

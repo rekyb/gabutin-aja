@@ -6,6 +6,69 @@
 
 ## Session History
 
+### [2026-05-27] Session 08: Display Name Input Validation & Type Check Compilation Fixes
+- **Task/Epic Status:**
+  - **Task:** Display Name Input Validation
+  - **Gate 3 (QA):** Passed — vitest (23/23), next build (clean compile)
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - Implemented core validation logic in `src/utils/validators.ts` with alphanumeric constraints, length limits (3 to 20), and a comprehensive Indonesian and English profanity filter.
+  - Updated the frontend onboarding form in `src/app/welcome/WelcomeClient.tsx` to utilize validation, render dynamic neobrutalist orange errors below the input field, limit physical input to 20 chars via `maxLength`, and lock submission unless valid.
+  - Added secure server-side validation inside the `createUser` Server Action (`src/app/actions/user.ts`) to throw validation errors on bypass.
+  - Wrote comprehensive unit tests under `src/utils/validators.test.ts` verifying all length boundaries, special characters, and both Indonesian/English bad word patterns (including mixed-case and nested profanities).
+  - Fixed a pre-existing TypeScript compiler re-assignment type error in `src/components/Card/CardResult.tsx`.
+  - Optimized project-wide Tailwind CSS classes for Tailwind v4 compatibility by replacing bracket syntax selectors with native CSS variable syntax (e.g. `border-[var(--color-card-stroke)]` to `border-(--color-card-stroke)`), native aspect ratios (`aspect-[3/1]` to `aspect-3/1`), and native stroke widths (`stroke-[3]` to `stroke-3`).
+  - Resolved multiple strict linter warnings in `WelcomeClient.tsx`, `layout.tsx`, and all skeleton loading files (`loading.tsx` in `feed`, `achievements`, `leaderboard`, and `profile`) by eliminating array index keys via static skeleton identifier keys, removing redundant React fragments, enforcing accessibility label-to-control relationships, resolving zero-fraction decimals, and correcting ES6 string conversions.
+  - Completed a final round of linter cleanups resolving warnings in `CardQuestion.tsx`, `CardResult.tsx`, `CardSkeleton/index.tsx`, `BottomNav/index.tsx`, `AppBar/index.tsx`, `connect.ts`, `guest-state.ts`, and `Skeleton/index.tsx` (enforcing Readonly props, eliminating legacy parseInt and Array keys, and optimizing ES6 fromCodePoint string generators).
+- **Discoveries & Technical Insights:**
+  - Tailwind v4 natively supports standardized CSS variables via `class-(--var-name)` notation and simplified numeric modifiers (e.g., `stroke-3`), which is preferred over legacy brackets `class-[val]`.
+  - Explicitly typing dynamic styling/layout variables as `string` when initializing them with a `const` (like `let borderClass: string = BORDER_SKIP`) avoids TypeScript re-assignment type inference issues down the line.
+- **Patterns (What Worked Well):**
+  - Isolating pure, deterministic validation algorithms into standalone utility files (`src/utils/validators.ts`) makes them extremely easy to unit test and share between Client and Server Action environments.
+- **Anti-Patterns to Avoid:**
+  - Never let TypeScript infer literal types for re-assignable variables that hold design token constants; explicitly type them as `string` to avoid build breakages.
+
+### [2026-05-27] Session 07: Quiz Wrong Answer Feedback & CardResult Design
+- **Task/Epic Status:**
+  - **Task:** Quiz Wrong Answer Feedback & Refined CardResult Design
+  - **Gate 3 (QA):** Passed — vitest (16/16), next lint (0 errors)
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - Redesigned the quiz wrong/correct feedback UI for the onboarding tutorial `WelcomeClient.tsx` matching the user's mockup design.
+  - Implemented the top header bar with left-aligned `SALAH!` / `BENAR!` text + icons and right-aligned Streak counter with animated Lucide Flame.
+  - Added the energetic Option A Gen-Z copy descriptions: `"Salah woi! Baca dulu nih"` on wrong and `"Nah bener! Menyala ilmu lo!"` on correct answers, with Lucide Sparkles icon on correct (and no book icon on wrong) and the blockquote layout (`border-l-4 border-border/40 pl-4 py-1 italic font-serif`) for the Wikipedia fact explanations.
+  - Standardized the core Feed component `CardResult.tsx` to follow the exact same visual layout, incorporating dynamic points/XP deltas, header bars, and Lora italicized blockquotes for `card.explanation`.
+  - Added `CardResult.test.tsx` containing comprehensive unit tests for all result states (correct, wrong, skip) and interaction handling.
+  - Widened the card sizes and panels consistently by **10%** across both mobile viewports (`max-w-[490px]`) and desktop viewports (`lg:w-[430px]`) for `CardQuestion.tsx`, `CardResult.tsx`, `CardSkeleton/index.tsx`, `FeedLoading` (`src/app/feed/loading.tsx`), and the onboarding shells in `WelcomeClient.tsx`.
+  - Configured quiz scoring feedback according to revised requirements: completely suppressed point/XP delta text blocks on wrong and skipped answers (since XP is not reduced), and simplified correct-answer feedback to display only the XP gain (`+3 XP`), as points are handled by the backend.
+  - Re-mapped the global navigation copies in `SideNav/index.tsx` and `BottomNav/index.tsx` to use the chosen Gen-Z terms (`FYP`, `Flex`, `Profil`).
+  - Removed the `Leaderboard` (Ranking) link entirely from the active navigation menus and test assertions, deferring its launch until v1.x.
+- **Discoveries & Technical Insights:**
+  - Testing against case-insensitive regex selectors in Vitest (e.g. `/SALAH!/i`) can easily match description copy containing similar words (like `Yahhh salah!`). Using exact string matches (`'SALAH!'`) is much more robust.
+- **Patterns (What Worked Well):**
+  - Reusing standard Lucide icons at high stroke widths (e.g., `stroke-[3]`) mimics the premium heavy design feel of standard emojis while complying with strict emoji bans.
+- **Anti-Patterns to Avoid:**
+  - Do not use case-insensitive DOM queries for general terms that may recur within body paragraphs.
+
+### [2026-05-27] Session 06: Runtime Connection, Build Fixes & CardQuestion Design
+- **Task/Epic Status:**
+  - **Epic:** Runtime Error Debugging & UI Vibe Realization (E04 Pre-flight)
+  - **Gate 3 (QA):** Passed — vitest (12/12), tsc (0 errors), next build (clean)
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - Updated `MONGODB_URI` in `.env` and `.env.local` to use the standard non-SRV connection string (listing all three replica set member hosts and specifying SSL/ReplicaSet options).
+  - Fixed TypeScript compiler type errors in `src/app/leaderboard/loading.tsx` and `src/app/profile/loading.tsx` where an inline `style` prop was passed to the `Skeleton` component (which does not accept `style`). Replaced with idiomatic Tailwind `rounded-full` class.
+  - Implemented the `CardQuestion` component in `src/components/Card/CardQuestion.tsx` following the exact neo-brutalist split layout styling from the static prototype `docs/prototype/index.html` (including responsive image-split layout using `WikipediaImage`, 10s interactive timer bar, key-press styling, and Lucide accessibility icons).
+  - Implemented the `CardSkeleton` component in `src/components/CardSkeleton/index.tsx` as a high-fidelity loading placeholder matching the exact split image-content layout and neobrutalist borders of `CardQuestion`, utilizing reuseable `<Skeleton />` elements with strict `0px border radius` layout rules.
+- **Discoveries & Technical Insights:**
+  - Standard SRV lookup (`mongodb+srv://...`) via Node.js native DNS resolver (`c-ares`) on the local network fails with `querySrv ETIMEOUT`. Changing to standard `mongodb://` connection string completely bypasses SRV lookup and resolves immediately and successfully.
+  - Emojis are strictly banned in the React codebase; user-facing components must use SVGs/Lucide-React (`Brain`, `Flame`, `ArrowRight`) to provide energetic indicators.
+- **Patterns (What Worked Well):**
+  - Combining `WikipediaImage` dynamic fetches inside the split layout gives standard A-grade brutalist UX seamlessly on Next.js routes.
+  - Using fallback hooks in the client components for reading optional stats like `currentStreak` from local storage.
+- **Anti-Patterns to Avoid:**
+  - Avoid hardcoding styling layout classes or inline styles; use Tailwind utility patterns mapped to `design-tokens.ts` for clean structural integrity.
+
 ### [2026-05-27] Session 05: E02 — Guest Identity & Onboarding
 - **Task/Epic Status:**
   - **Epic:** E02 — Guest Identity & Onboarding

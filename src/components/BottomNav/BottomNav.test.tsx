@@ -7,17 +7,17 @@ vi.mock('next/navigation', () => ({
 }))
 
 describe('BottomNav', () => {
-  it('renders Gabutin, Lencana, and Profil Gue links', () => {
+  it('renders FYP, Flex, and Profil links', () => {
     render(<BottomNav className="" />)
-    expect(screen.getByRole('link', { name: /gabutin/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /lencana/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /profil gue/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /fyp/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /flex/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /profil/i })).toBeInTheDocument()
   })
 
   it('has correct hrefs', () => {
     render(<BottomNav className="" />)
-    expect(screen.getByRole('link', { name: /gabutin/i })).toHaveAttribute('href', '/feed')
-    expect(screen.getByRole('link', { name: /lencana/i })).toHaveAttribute('href', '/achievements')
-    expect(screen.getByRole('link', { name: /profil gue/i })).toHaveAttribute('href', '/profile')
+    expect(screen.getByRole('link', { name: /fyp/i })).toHaveAttribute('href', '/feed')
+    expect(screen.getByRole('link', { name: /flex/i })).toHaveAttribute('href', '/achievements')
+    expect(screen.getByRole('link', { name: /profil/i })).toHaveAttribute('href', '/profile')
   })
 })
