@@ -212,6 +212,13 @@ export function WelcomeClient() {
 
   // ── Tutorial phase ─────────────────────────────────────────────────────────
   if (phase === 'tutorial') {
+    let borderOverride: string = BORDER_WRONG
+    if (selectedAnswer === card.correctIndex) {
+      borderOverride = BORDER_CORRECT
+    } else if (selectedAnswer === -1 || selectedAnswer === -2) {
+      borderOverride = BORDER_SKIP
+    }
+
     return (
       // Full-height centering on desktop, normal scroll on mobile
       <div className="h-[calc(100dvh-8rem)] lg:h-dvh flex flex-col items-center p-4 lg:p-6 overflow-hidden">
@@ -291,7 +298,7 @@ export function WelcomeClient() {
           <CardShell
             sourceUrl={card.sourceUrl}
             progress={progressBadge}
-            borderOverride={selectedAnswer === card.correctIndex ? BORDER_CORRECT : (selectedAnswer === -1 || selectedAnswer === -2) ? BORDER_SKIP : BORDER_WRONG}
+            borderOverride={borderOverride}
             action={
               <button
                 onClick={() => animateTransition(handleNext)}
@@ -417,9 +424,9 @@ export function WelcomeClient() {
         </button>
 
         <div className="relative flex py-2 items-center">
-          <div className="flex-grow border-t border-border/40"></div>
-          <span className="flex-shrink mx-4 text-xs font-mono text-muted-foreground">ATAU</span>
-          <div className="flex-grow border-t border-border/40"></div>
+          <div className="grow border-t border-border/40"></div>
+          <span className="shrink mx-4 text-xs font-mono text-muted-foreground">ATAU</span>
+          <div className="grow border-t border-border/40"></div>
         </div>
 
         <button
