@@ -20,7 +20,7 @@ export const SideNav: FC<SideNavProps> = ({ className }) => {
 
   return (
     <aside
-      className={`fixed left-0 top-0 bottom-0 w-1/4 z-40 bg-sidebar flex flex-col justify-between px-4 py-6 ${className ?? ''}`}
+      className={`fixed left-0 top-0 bottom-0 w-[20%] z-40 bg-sidebar flex flex-col justify-between px-4 py-6 ${className ?? ''}`}
     >
       {/* ── Top: logo + links ── */}
       <div className="flex flex-col gap-0">

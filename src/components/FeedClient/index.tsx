@@ -12,7 +12,6 @@ export const FeedClient: FC = () => {
     achievements,
     showReEngagement,
     isLoadingMore,
-    userId,
     init,
     loadMoreCards,
     dismissAchievement,
@@ -69,7 +68,7 @@ export const FeedClient: FC = () => {
     <div className="w-full flex flex-col items-center bg-background min-h-screen">
       
       {/* Scrollable Feed List */}
-      <div className="w-full max-w-[490px] lg:w-[430px] flex flex-col gap-6 px-4 py-8">
+      <div className="w-full max-w-[490px] lg:max-w-[720px] lg:w-[720px] flex flex-col gap-6 lg:gap-0 px-4 lg:px-0 py-8 lg:py-0 lg:border-x-2 lg:border-border lg:min-h-screen lg:bg-sidebar">
         
         {/* Render Multiple Cards */}
         {cards.map((card, index) => (

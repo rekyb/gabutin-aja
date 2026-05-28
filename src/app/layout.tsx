@@ -41,7 +41,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <AppBar className="lg:hidden" />
           <div className="flex min-h-screen">
             <SideNav className="hidden lg:flex" />
-            <main className="flex-1 pt-16 lg:pt-0 lg:pl-[25%] pb-16 lg:pb-0 min-h-screen">
+            <main className="flex-1 pt-16 lg:pt-0 lg:pl-[20%] pb-16 lg:pb-0 min-h-screen">
               {children}
             </main>
           </div>

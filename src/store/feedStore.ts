@@ -1,11 +1,12 @@
 import { create } from 'zustand'
 import { getNextCard } from '@/app/actions/feed'
-import type { CardDoc, AchievementDef } from '@/types'
+import { getUniqueUserId, isGuestOnly, shouldShowReEngagement } from '@/lib/guest-state'
+import type { CardDoc, AchievementDef, SubmitAnswerResponse } from '@/types'
 
 function readUserId(): string {
   try {
-    const parsed = JSON.parse(localStorage.getItem('gabutin_user') ?? '{}') as { uniqueUserId?: string }
-    return parsed.uniqueUserId ?? 'guest'
+    if (globalThis.window === undefined) return 'guest'
+    return getUniqueUserId() ?? 'guest'
   } catch {
     return 'guest'
   }
@@ -13,16 +14,18 @@ function readUserId(): string {
 
 function checkReEngagement(): boolean {
   try {
-    const parsed = JSON.parse(localStorage.getItem('gabutin_user') ?? '{}') as {
-      guestOnly?: boolean
-      guestCardCount?: number
-      guestReEngagementShownAt?: number
-    }
-    if (!parsed.guestOnly || (parsed.guestCardCount ?? 0) < 15) return false
-    return Date.now() - (parsed.guestReEngagementShownAt ?? 0) > 24 * 60 * 60 * 1000
+    if (globalThis.window === undefined) return false
+    return isGuestOnly() && shouldShowReEngagement()
   } catch {
     return false
   }
+}
+
+export interface CardState {
+  phase: 'fact' | 'question' | 'result'
+  selectedAnswer: number | null
+  response: SubmitAnswerResponse | null
+  wasTimeout: boolean
 }
 
 interface FeedStore {
@@ -31,11 +34,13 @@ interface FeedStore {
   achievements: AchievementDef[]
   showReEngagement: boolean
   isLoadingMore: boolean
+  cardStates: Record<string, CardState>
 
   init: () => void
   loadInitialCards: () => Promise<void>
   loadMoreCards: () => Promise<void>
   appendAchievements: (newAchievements: AchievementDef[]) => void
+  updateCardState: (cardId: string, updates: Partial<CardState>) => void
   dismissAchievement: (index: number) => void
   dismissReEngagement: () => void
   reset: () => void
@@ -47,11 +52,14 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
   achievements: [],
   showReEngagement: false,
   isLoadingMore: false,
+  cardStates: {},
 
   init: () => {
     const uid = readUserId()
     set({ userId: uid })
-    get().loadInitialCards().catch(() => {})
+    if (get().cards.length === 0) {
+      get().loadInitialCards().catch(() => {})
+    }
   },
 
   loadInitialCards: async () => {
@@ -68,7 +76,7 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
         const next = await getNextCard(uid)
         if (next) {
           // Prevent adjacent exact duplicates if any
-          if (list.length === 0 || list[list.length - 1]._id !== next._id) {
+          if (list.length === 0 || list.at(-1)?._id !== next._id) {
             list.push(next)
           }
         }
@@ -103,6 +111,23 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
     set((s) => ({ achievements: [...s.achievements, ...newAchievements] }))
   },
 
+  updateCardState: (cardId, updates) => {
+    set((s) => ({
+      cardStates: {
+        ...s.cardStates,
+        [cardId]: {
+          ...(s.cardStates[cardId] ?? {
+            phase: 'fact',
+            selectedAnswer: null,
+            response: null,
+            wasTimeout: false,
+          }),
+          ...updates,
+        },
+      },
+    }))
+  },
+
   dismissAchievement: (index) =>
     set((s) => ({ achievements: s.achievements.filter((_, i) => i !== index) })),
 
@@ -115,5 +140,6 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
       achievements: [],
       showReEngagement: false,
       isLoadingMore: false,
+      cardStates: {},
     }),
 }))
