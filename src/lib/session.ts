@@ -48,13 +48,11 @@ export async function getSession(): Promise<{ userId: string } | null> {
 
   // Double check expiration (TTL index runs periodically, so we do an explicit check too)
   if (new Date() > session.expiresAt) {
-    await deleteSession()
     return null
   }
 
   // Guard: populate returns null if the referenced User doc was deleted (orphaned session)
   if (!session.userId) {
-    await deleteSession()
     return null
   }
 
