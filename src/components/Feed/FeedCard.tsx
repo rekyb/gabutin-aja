@@ -13,8 +13,8 @@ import { submitAnswer } from '@/app/actions/answer'
 import { getUniqueUserId } from '@/lib/guest-state'
 import { useFeedStore } from '@/store/feedStore'
 import type { CardDoc } from '@/types'
+import { Button } from '@/components/Button'
 import {
-  BUTTON_PRESS,
   MCQ_OPTION,
   BORDER_CORRECT,
   BORDER_WRONG,
@@ -178,16 +178,18 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
             sourceUrl={card.sourceUrl}
             action={
               <div className="flex justify-end pt-2">
-                <button
+                <Button
                   onClick={() => updateCardState(card._id, { phase: 'question' })}
-                  className={`${BUTTON_PRESS} bg-transparent text-primary font-mono font-bold text-xs px-6 py-2 border-2 border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-150 cursor-pointer`}
+                  variant="outline"
+                  size="sm"
+                  className="px-6 py-2"
                 >
                   Kuis!
-                </button>
+                </Button>
               </div>
             }
           >
-            <h3 className="font-sans font-black text-lg text-foreground mb-1 uppercase tracking-wide">
+            <h3 className="font-sans font-black text-xl text-foreground mb-1 uppercase tracking-wide">
               {articleTitle}
             </h3>
             <p className="font-serif italic text-base leading-relaxed text-foreground/90">
@@ -237,13 +239,15 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
             </div>
 
             <div className="flex">
-              <button
+              <Button
                 onClick={handleSkip}
+                variant="ghost"
+                size="sm"
                 disabled={isSubmitting}
-                className={`${BUTTON_PRESS} text-muted-foreground font-mono text-xs border border-border px-3 py-1.5 hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary flex items-center gap-1 cursor-pointer disabled:opacity-50`}
+                className="py-1.5 px-3 text-muted-foreground hover:border-primary hover:text-primary"
               >
                 Skip
-              </button>
+              </Button>
             </div>
           </CardShell>
         )}
@@ -326,7 +330,7 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
           
           {/* Header Actions & Meta */}
           <div className="flex items-center justify-between text-sm pb-1 border-b border-border/10">
-            <span className="font-sans font-extrabold text-foreground">{articleTitle}</span>
+            <span className="font-sans font-black text-base text-foreground">{articleTitle}</span>
           </div>
 
           {/* STATE 1: Fact Post */}
@@ -352,12 +356,14 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
                 >
                   Sumber Wikipedia
                 </a>
-                <button
+                <Button
                   onClick={() => updateCardState(card._id, { phase: 'question' })}
-                  className={`${BUTTON_PRESS} bg-transparent text-primary font-mono font-bold text-xs px-5 py-1.5 border-2 border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-150 cursor-pointer`}
+                  variant="outline"
+                  size="sm"
+                  className="px-5 py-1.5"
                 >
                   Kuis!
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -399,13 +405,15 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
 
               {/* Skip button */}
               <div className="flex">
-                <button
+                <Button
                   onClick={handleSkip}
+                  variant="ghost"
+                  size="sm"
                   disabled={isSubmitting}
-                  className={`${BUTTON_PRESS} text-muted-foreground font-mono text-xs border border-border px-3 py-1.5 hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary flex items-center gap-1 cursor-pointer disabled:opacity-50`}
+                  className="py-1.5 px-3 text-muted-foreground hover:border-primary hover:text-primary"
                 >
                   Skip
-                </button>
+                </Button>
               </div>
             </div>
           )}

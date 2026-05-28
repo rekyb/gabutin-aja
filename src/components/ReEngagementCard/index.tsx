@@ -1,6 +1,7 @@
 'use client'
 import type { FC } from 'react'
-import { CARD_BASE, BUTTON_PRESS } from '@/lib/design-tokens'
+import { CARD_BASE } from '@/lib/design-tokens'
+import { Button } from '@/components/Button'
 
 export interface ReEngagementCardProps {
   onSave: () => void
@@ -13,18 +14,21 @@ export const ReEngagementCard: FC<ReEngagementCardProps> = ({ onSave, onDismiss 
       Lo udah jawab 15+ soal. Jangan sampe ilang — simpan progress lo dalam 10 detik.
     </p>
     <div className="flex gap-3">
-      <button
+      <Button
         onClick={onSave}
-        className={`${BUTTON_PRESS} bg-primary text-primary-foreground font-mono font-bold px-4 py-2 border-2 border-border flex-1`}
+        variant="primary"
+        className="flex-1"
       >
         Simpan Progress
-      </button>
-      <button
+      </Button>
+      <Button
         onClick={onDismiss}
-        className={`${BUTTON_PRESS} bg-background text-foreground font-mono px-4 py-2 border-2 border-border`}
+        variant="outline"
+        className="bg-background text-foreground border-border hover:bg-muted hover:text-foreground"
       >
         Ntar deh →
-      </button>
+      </Button>
     </div>
   </div>
 )
+

@@ -86,7 +86,7 @@ describe('Session Utilities', () => {
       expect(Session.findOne).toHaveBeenCalledWith({ sessionToken: 'token-abc' })
     })
 
-    it('returns null and deletes session if token is found but expired', async () => {
+    it('returns null if token is found but expired', async () => {
       mockCookiesStore.get.mockReturnValue({ value: 'token-abc' })
       
       const expiredDate = new Date()
@@ -102,8 +102,9 @@ describe('Session Utilities', () => {
       const result = await getSession()
 
       expect(result).toBeNull()
-      expect(Session.deleteOne).toHaveBeenCalledWith({ sessionToken: 'token-abc' })
-      expect(mockCookiesStore.delete).toHaveBeenCalledWith('gabutin_session')
+      // getSession() must NOT write cookies — it is called from Server Components
+      expect(Session.deleteOne).not.toHaveBeenCalled()
+      expect(mockCookiesStore.delete).not.toHaveBeenCalled()
     })
 
     it('returns userId if session is valid and active', async () => {
@@ -122,6 +123,27 @@ describe('Session Utilities', () => {
       const result = await getSession()
 
       expect(result).toEqual({ userId: 'user-789' })
+    })
+
+    it('returns null if populated userId is null (orphaned session)', async () => {
+      mockCookiesStore.get.mockReturnValue({ value: 'token-abc' })
+
+      const futureDate = new Date()
+      futureDate.setDate(futureDate.getDate() + 1)
+
+      vi.mocked(Session.findOne).mockReturnValue({
+        populate: vi.fn().mockResolvedValue({
+          userId: null,
+          expiresAt: futureDate,
+        }),
+      } as any)
+
+      const result = await getSession()
+
+      expect(result).toBeNull()
+      // getSession() must NOT write cookies — it is called from Server Components
+      expect(Session.deleteOne).not.toHaveBeenCalled()
+      expect(mockCookiesStore.delete).not.toHaveBeenCalled()
     })
   })
 

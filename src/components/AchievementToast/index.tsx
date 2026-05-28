@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, type FC } from 'react'
-import { Trophy } from 'lucide-react'
-import { TOAST_POSITION, RARITY_COLORS } from '@/lib/design-tokens'
+import { TOAST_POSITION, VIBRANT_RARITY_THEMES } from '@/lib/design-tokens'
 import type { AchievementDef } from '@/types'
 
 export interface AchievementToastProps {
@@ -15,16 +14,25 @@ export const AchievementToast: FC<AchievementToastProps> = ({ achievement, onDis
     return () => clearTimeout(timer)
   }, [onDismiss])
 
-  const rarityClass = RARITY_COLORS[achievement.rarity] ?? RARITY_COLORS.Common
+  const theme = VIBRANT_RARITY_THEMES[achievement.rarity] ?? VIBRANT_RARITY_THEMES.Common
 
   return (
     <div
-      className={`${TOAST_POSITION} ${rarityClass} bg-card border-2 border-(--color-card-stroke) shadow-[4px_4px_0px_0px_var(--color-shadow)] p-4 flex items-center gap-3`}
+      className={`${TOAST_POSITION} animate-slide-up bg-[#18181b] border-2 ${theme.borderColor} ${theme.shadowStyle} p-4 md:p-5 flex items-center gap-4 transition-all duration-300`}
     >
-      <Trophy className="h-5 w-5 shrink-0" />
+      <div className="text-4xl shrink-0 select-none flex items-center justify-center">
+        {achievement.icon || '🏆'}
+      </div>
       <div className="flex-1 min-w-0">
-        <p className="font-sans font-bold text-sm">{achievement.title}</p>
-        <p className="font-mono text-xs opacity-70">{achievement.rarity}</p>
+        <p className={`font-sans font-black text-[10px] tracking-widest uppercase ${theme.labelColor}`}>
+          LENCANA TERBUKA!
+        </p>
+        <h4 className="font-sans font-black text-base md:text-lg text-white leading-tight mt-0.5 truncate">
+          {achievement.title}
+        </h4>
+        <p className="font-mono text-[11px] text-neutral-400 leading-snug mt-1">
+          {achievement.description}
+        </p>
       </div>
     </div>
   )

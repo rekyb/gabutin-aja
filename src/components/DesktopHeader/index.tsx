@@ -3,7 +3,7 @@ import { useEffect, useState, type FC } from 'react'
 import { useUiStore } from '@/store/uiStore'
 import { getUniqueUserId } from '@/lib/guest-state'
 import { getUserByUniqueId } from '@/app/actions/user'
-import { BUTTON_PRESS } from '@/lib/design-tokens'
+import { Button } from '@/components/Button'
 
 export const DesktopHeader: FC = () => {
   const [isOnboarded, setIsOnboarded] = useState(true)
@@ -38,13 +38,16 @@ export const DesktopHeader: FC = () => {
       </a>
 
       {!isOnboarded && (
-        <button
+        <Button
           onClick={openLoginModal}
-          className={`${BUTTON_PRESS} bg-primary border-2 border-border font-mono font-bold text-xs px-4 py-1.5 text-primary-foreground transition-all cursor-pointer`}
+          variant="primary"
+          size="sm"
+          className="px-4 py-1.5"
         >
           Masuk
-        </button>
+        </Button>
       )}
     </div>
   )
 }
+

@@ -6,6 +6,76 @@
 
 ## Session History
 
+### [2026-05-28] Session 22: Achievements Auto-Unlock & Guest Hydration
+- **Task/Epic Status:**
+  - **Task:** Automatic Achievements Unlocking & Client Hydration for Guest Users, Reusable Global Button Component & Codebase Button Migration
+  - **Gate 3 (QA):** Passed — vitest 159/159 passing, next build success, zero compilation warnings, and full test coverage for client-side hydration and the global Button component.
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - `src/app/actions/answer.ts` (MODIFIED) — Updated `submitAnswer` to retrieve and build a complete `themeScoresMap` mapping points across all themes. This ensures theme-based achievements (`theme_focused` and `theme_master`) are checked against the user's complete history rather than only the current question's theme, fixing the bug that prevented accurate unlocking.
+  - `src/app/actions/achievements.ts` (MODIFIED) — Added an on-demand `checkAchievements` call inside `getUserAchievements`. Whenever achievements are retrieved (for both authenticated and guest users), their current statistics and progress are evaluated to automatically unlock and persist any newly qualified achievements to MongoDB.
+  - `src/app/achievements/AchievementsClient.tsx` (MODIFIED) — Converted props (`achievements`, `stats`, `userId`) to local react state. Wired `useEffect` client-side hydration for guest users; on mount, if the visitor is a guest, their achievements and statistics are fetched from the database using `getGuestAchievementsData` and local state is populated. Pin and unpin actions fetch the refreshed achievements state to update guest UI immediately. Imported `VIBRANT_RARITY_THEMES` and applied each achievement's specific rarity border and neobrutalist hard shadow classes to the earned badge cards, bringing the exact mockup-perfect color vibration to the achievements grid dashboard. Consumed the global `<Button />` component for warning banner CTA and Pin/Unpin actions.
+  - `src/app/achievements/AchievementsClient.test.tsx` (MODIFIED) — Added a unit test validating that `getGuestAchievementsData` is called for guest users on mount and successfully hydrates the component, updating the earned lencana counter on the UI.
+  - `src/components/Button/index.tsx` (NEW) — Implemented a globally reusable neobrutalist `Button` component that standardizes our button elements. Features exact active press animations (`BUTTON_PRESS`), five variants (`primary`, `secondary`, `outline`, `ghost`, `danger`), three sizing tiers (`sm`, `md`, `lg`), customizable width parameters, built-in loading spinners, and robust icon styling slots (left/right).
+  - `src/components/Button/Button.test.tsx` (NEW) — Wrote comprehensive unit tests verifying children rendering, neobrutalist classes, sizing tiers, width behavior, icon layouts, loading-state disable behavior, and mouse click events, achieving 100% coverage.
+  - Button Consumption across Codebase (MODIFIED: `src/components/ThemeToggle/index.tsx`, `src/components/LoginModal/index.tsx`, `src/components/ReEngagementCard/index.tsx`, `src/components/AppBar/index.tsx`, `src/components/DesktopHeader/index.tsx`, `src/components/Feed/FeedCard.tsx`, `src/app/welcome/WelcomeClient.tsx`, `src/app/onboarding/OnboardingClient.tsx`, `src/components/ProfileClient/index.tsx`) — Replaced legacy raw HTML button structures and inline neobrutalist class styles across all codebase features with our unified `<Button />` component, ensuring consistent theme styling, sizes, loading states, and icons.
+- **Discoveries & Technical Insights:**
+  - Passing an incomplete, single-property dictionary for `themeScores` inside `submitAnswer` prevented cumulative check logic from matching other themes. Resolving this by constructing a comprehensive database map ensures precise unlock matches.
+  - Guest users landing directly on the feed and earning achievements stored under their `uniqueUserId` would see a fully locked, empty achievements page on `/achievements` because they lacked a session cookie. Hydrating their stats on client-mount by looking up their guest ID resolves this data visibility gap beautifully.
+  - In-memory react state synced with incoming server props provides an optimal UX bridge for hybrid components supporting both Server Components and localStorage-driven hydration.
+- **Patterns (What Worked Well):**
+  - Evaluating achievement checks on-demand during retrieval serves as a highly robust self-healing mechanism, automatically catching and unlocking any achievements that users qualified for but missed due to past edge cases.
+  - Standardizing key micro-interactive styles (such as shadows, outline border styles, loading states, and cursor settings) in a unified React component keeps layouts DRY and visual branding cohesive across modular page layers.
+
+### [2026-05-28] Session 21: Achievements Guest Warning Prompt
+- **Task/Epic Status:**
+  - **Task:** Achievements Guest Warning Prompt, Redesigned Toast Notification, Color Registration, Branding & UI Polish
+  - **Gate 3 (QA):** Passed — vitest 150/150, tsc clean, next build clean, 100% test coverage on warning prompt, toast redesign, and renames.
+  - **Status:** **DONE** — staged and committed
+- **What Was Implemented:**
+  - `src/app/achievements/AchievementsClient.tsx` (MODIFIED) — Added an elegant, premium neobrutalist warning banner/prompt shown when the user is playing as a guest (`userId` is empty). The banner contains the exact warning text and a high-impact 'Simpan Progres' CTA button connecting the guest account to Google. Renamed page header title from `'Achievements'` to `'Flexing'` and renamed counter text from `'badge diraih'` to `'lencana diraih'` to align branding and Indonesian translation across the dashboard UI.
+  - `src/app/achievements/AchievementsClient.test.tsx` (MODIFIED) — Updated unit test assertions to match the new `'Flexing'` title layout.
+  - `src/app/actions/answer.ts` (MODIFIED) — Implemented safe coalescing fallbacks (`?? 0`) on `totalAnswers`, `totalSkips`, and `consecutiveWrongs` inside the scoring action. Extended the guest handler: if a new guest plays the feed directly (without finishing onboarding `/welcome`), `submitAnswer` automatically initializes and inserts a guest `User` record in MongoDB, enabling full progression and immediate achievement yielding on the feed.
+  - `src/components/Feed/FeedCard.tsx` (MODIFIED) — Increased the font size of the Wikipedia article title by one level: from `text-lg` to `text-xl` on mobile views and from `text-sm` (inherited) to `text-base` + `font-black` on desktop views, enhancing readability.
+  - `src/components/AchievementToast/index.tsx` (MODIFIED) — Redesigned the toast component to be extremely vibrant and match the dark, high-vibe neobrutalist mockup: features a dark background, bold white title, light gray description, large emojis, and dynamic borders/shadows matching the achievement's rarity tier. Imported styles directly from `design-tokens.ts`.
+  - `src/lib/design-tokens.ts` (MODIFIED) — Centralized the new vibrant rarity hexes, text classes, and border styles in `RARITY_COLORS` and `RARITY_BORDER_COLORS` so the main `/achievements` badges visually match the toast presentation. Centralized and exported the `VIBRANT_RARITY_THEMES` dictionary.
+  - `src/app/globals.css` (MODIFIED) — Added slideUp keyframe animations and `.animate-slide-up` utility class with polished cubic-bezier easing to dynamically slide and fade toast notifications in from the bottom.
+- **Discoveries & Technical Insights:**
+  - Server Component read paths (e.g. `getSession()`) must remain pure reads; eager cookie mutations like `deleteSession()` inside these components break Next.js App Router rules.
+  - Mocking the server actions (`pinBadge`, `unpinBadge`) inside Achievements client tests prevents Vitest from executing MongoDB import paths, eliminating the need to set up DB credentials for client-only UI tests.
+  - Pre-existing users created in older dev sessions (pre-E06) returned `undefined` for `totalAnswers`/`totalSkips` due to `.lean()` bypassing schema defaults, which turned additions into `NaN` and blocked correct/wrong/skip achievements.
+  - By auto-creating guest user records in MongoDB on their first feed action, we ensure that new anonymous visitors can instantly accumulate score, levels, and earn real-time achievements.
+  - Custom animations sit cleanly inside the global stylesheet and can be driven by a utility class to keep markup clean and performant.
+- **Patterns (What Worked Well):**
+  - Reusing standard global location redirect routines and aligning the design layout with other existing guest warning templates (e.g. in Profile) keeps the user experience highly consistent.
+  - Centralizing and exporting rarity themes inside `design-tokens.ts` ensures DRY consistency across both feed components (Achievement Toast) and main dashboard grids (Achievements Page).
+
+### [2026-05-28] Session 20: E06 — Achievement System
+- **Task/Epic Status:**
+  - **Epic:** E06 — Achievement System
+  - **Gate 3 (QA):** Passed — vitest 147/147, tsc clean, next build clean, coverage 99.82%
+  - **Status:** **DONE** — branch `feat/e06-achievement-system` pushed, PR open
+- **What Was Implemented:**
+  - `src/lib/achievements/definitions.ts` (NEW) — 17 `AchievementDef` entries with keys, icons, titles, rarity, and descriptions (exact spec from epic doc)
+  - `src/lib/achievements/check.ts` (NEW) — `checkAchievements(ctx)`: fetches earned keys from DB, evaluates all 17 conditions via `evaluateCondition` switch, inserts newly earned docs with `insertMany({ ordered: false })`, swallows duplicate-key errors, returns newly earned `AchievementDef[]`
+  - `src/lib/achievements/check.test.ts` (NEW) — 40 assertions, 100% branch coverage: true/false branch per condition + idempotency + insertMany error swallow
+  - `src/app/actions/answer.ts` (MODIFIED) — extended `LeanUser` to include `consecutiveWrongs`/`totalAnswers`/`totalSkips`; reads `previousConsecutiveWrongs` before update; increments `consecutiveWrongs` on wrong, resets to 0 on correct/skip; calls `checkAchievements` after DB writes with full `AchievementContext`; returns real `newAchievements`
+  - `src/app/actions/achievements.ts` (NEW) — `getUserAchievements` (lean find by `_id`), `pinBadge` (3-slot cap, oldest-earnedAt replacement), `unpinBadge` (clear isShowcased + showcasePosition)
+  - `src/app/achievements/page.tsx` (MODIFIED) — async Server Component; uses `getSession()` → `User.findById` (matches `onboarding/page.tsx` pattern) to get `uniqueUserId`; fetches achievements + themeScores in parallel; passes `stats` prop to client
+  - `src/app/achievements/AchievementsClient.tsx` (NEW) — 17-slot badge grid; earned: full rarity border + color + pin/unpin buttons; locked: `opacity-50 grayscale` + progress hint via `getProgressHint()`; uses `useTransition` for optimistic pin/unpin loading state
+  - `src/lib/design-tokens.ts` (MODIFIED) — added `RARITY_BORDER_COLORS` for badge border styling
+- **Discoveries & Technical Insights:**
+  - `vi.mock` factory is hoisted to the top of the file before any `const` declarations. Variables declared at module scope (e.g., `const mockFind = vi.fn()`) are NOT yet initialized when the factory runs — causes `ReferenceError: Cannot access before initialization`. Fix: use `vi.fn()` inline in the factory, then access via `vi.mocked(ImportedModule.method)` in tests.
+  - `getSession()` returns `{ userId }` which is the MongoDB `_id` string, NOT `uniqueUserId`. To get `uniqueUserId`, call `User.findById(session.userId)` and read `.uniqueUserId` from the doc. Consistent with `onboarding/page.tsx` pattern.
+  - `insertMany({ ordered: false })` allows partial success — Mongo writes all non-duplicate docs even if some hit the unique index. Swallowing the thrown error in a try/catch means the function still returns newly-earned achievements correctly (already filtered before insert).
+  - `consecutiveWrongs` must be captured as `previousConsecutiveWrongs` BEFORE the DB update. The comeback achievement (`consecutiveWrongs >= 3 && result === 'correct'`) uses the pre-update value — if you read it after reset, it's always 0.
+- **Patterns (What Worked Well):**
+  - The `evaluateCondition(key, ctx)` switch keeps all 17 condition branches in one pure function — trivially testable and easy to extend.
+  - `useTransition` + `router.refresh()` is the right pattern for Server Action mutations in Next.js App Router client components — no manual state management needed.
+- **Anti-Patterns to Avoid:**
+  - Do NOT reference module-scope variables inside `vi.mock` factories — they're hoisted before those variables are initialized. Always use inline `vi.fn()` in the factory.
+  - Do NOT use `getSession().userId` as `uniqueUserId` — it's the MongoDB ObjectId. Always look up the User doc to get `uniqueUserId`.
+
 ### [2026-05-28] Session 19: E05 — Scoring Engine
 - **Task/Epic Status:**
   - **Epic:** E05 — Scoring Engine

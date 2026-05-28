@@ -16,10 +16,58 @@ export const BORDER_SKIP = 'border-2 border-muted-foreground shadow-[4px_4px_0px
 
 // Achievement rarity text colors
 export const RARITY_COLORS: Record<string, string> = {
-  Common: 'text-muted-foreground',
-  Rare: 'text-blue-400',
-  Epic: 'text-purple-400',
-  Mythic: 'text-yellow-400',
+  Common: 'text-[#94a3b8]',
+  Rare: 'text-[#38bdf8]',
+  Epic: 'text-[#c084fc]',
+  Mythic: 'text-[#f97316]',
+}
+
+// Achievement rarity border colors
+export const RARITY_BORDER_COLORS: Record<string, string> = {
+  Common: 'border-[#94a3b8]',
+  Rare: 'border-[#38bdf8]',
+  Epic: 'border-[#c084fc]',
+  Mythic: 'border-[#f97316]',
+}
+
+// Vibrant rarity color themes (used in toast and themed cards)
+export interface VibrantRarityTheme {
+  labelColor: string
+  borderColor: string
+  shadowStyle: string
+  textColor: string
+  hex: string
+}
+
+export const VIBRANT_RARITY_THEMES: Record<string, VibrantRarityTheme> = {
+  Common: {
+    labelColor: 'text-[#94a3b8]',
+    borderColor: 'border-[#94a3b8]',
+    shadowStyle: 'shadow-[6px_6px_0px_0px_#94a3b8]',
+    textColor: 'text-[#94a3b8]',
+    hex: '#94a3b8',
+  },
+  Rare: {
+    labelColor: 'text-[#38bdf8]',
+    borderColor: 'border-[#38bdf8]',
+    shadowStyle: 'shadow-[6px_6px_0px_0px_#38bdf8]',
+    textColor: 'text-[#38bdf8]',
+    hex: '#38bdf8',
+  },
+  Epic: {
+    labelColor: 'text-[#c084fc]',
+    borderColor: 'border-[#c084fc]',
+    shadowStyle: 'shadow-[6px_6px_0px_0px_#c084fc]',
+    textColor: 'text-[#c084fc]',
+    hex: '#c084fc',
+  },
+  Mythic: {
+    labelColor: 'text-[#f97316]',
+    borderColor: 'border-[#f97316]',
+    shadowStyle: 'shadow-[6px_6px_0px_0px_#f97316]',
+    textColor: 'text-[#f97316]',
+    hex: '#f97316',
+  },
 }
 
 // XP bar
