@@ -16,8 +16,8 @@ describe('AchievementToast', () => {
     expect(screen.getByText('Gak Ada Obat!')).toBeInTheDocument()
   })
 
-  it('applies Rare rarity color class', () => {
+  it('applies Rare rarity border class', () => {
     const { container } = render(<AchievementToast achievement={mockAchievement} />)
-    expect(container.firstChild).toHaveClass('text-blue-400')
+    expect(container.firstChild).toHaveClass('border-[#38bdf8]')
   })
 })

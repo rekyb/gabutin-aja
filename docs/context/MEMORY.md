@@ -8,18 +8,21 @@
 
 ### [2026-05-28] Session 21: Achievements Guest Warning Prompt
 - **Task/Epic Status:**
-  - **Task:** Achievements Guest Warning Prompt & Robust Logic Verification
-  - **Gate 3 (QA):** Passed — vitest 150/150, tsc clean, next build clean, 100% test coverage on warning prompt client implementation.
+  - **Task:** Achievements Guest Warning Prompt & Redesigned Toast Notification
+  - **Gate 3 (QA):** Passed — vitest 150/150, tsc clean, next build clean, 100% test coverage on warning prompt and toast redesign.
   - **Status:** **DONE** — staged and committed
 - **What Was Implemented:**
   - `src/app/achievements/AchievementsClient.tsx` (MODIFIED) — Added an elegant, premium neobrutalist warning banner/prompt shown when the user is playing as a guest (`userId` is empty). The banner contains the exact warning text and a high-impact 'Simpan Progres' CTA button connecting the guest account to Google.
   - `src/app/achievements/AchievementsClient.test.tsx` (NEW) — Unit test suite checking the presence of the warning prompt, the "Simpan Progres" button, and correct rendering for authenticated users without hydration mismatch.
   - `src/app/actions/answer.ts` (MODIFIED) — Implemented safe coalescing fallbacks (`?? 0`) on `totalAnswers`, `totalSkips`, and `consecutiveWrongs` inside the scoring action. Extended the guest handler: if a new guest plays the feed directly (without finishing onboarding `/welcome`), `submitAnswer` automatically initializes and inserts a guest `User` record in MongoDB, enabling full progression and immediate achievement yielding on the feed.
+  - `src/components/AchievementToast/index.tsx` (MODIFIED) — Redesigned the toast component to be extremely vibrant and match the dark, high-vibe neobrutalist mockup: features a dark background, bold white title, light gray description, large emojis, and dynamic borders/shadows matching the achievement's rarity tier (Common: Slate, Rare: Neon Blue, Epic: Purple, Mythic: Orange).
+  - `src/app/globals.css` (MODIFIED) — Added slideUp keyframe animations and `.animate-slide-up` utility class with polished cubic-bezier easing to dynamically slide and fade toast notifications in from the bottom.
 - **Discoveries & Technical Insights:**
   - Server Component read paths (e.g. `getSession()`) must remain pure reads; eager cookie mutations like `deleteSession()` inside these components break Next.js App Router rules.
   - Mocking the server actions (`pinBadge`, `unpinBadge`) inside Achievements client tests prevents Vitest from executing MongoDB import paths, eliminating the need to set up DB credentials for client-only UI tests.
   - Pre-existing users created in older dev sessions (pre-E06) returned `undefined` for `totalAnswers`/`totalSkips` due to `.lean()` bypassing schema defaults, which turned additions into `NaN` and blocked correct/wrong/skip achievements.
   - By auto-creating guest user records in MongoDB on their first feed action, we ensure that new anonymous visitors can instantly accumulate score, levels, and earn real-time achievements.
+  - Custom animations sit cleanly inside the global stylesheet and can be driven by a utility class to keep markup clean and performant.
 - **Patterns (What Worked Well):**
   - Reusing standard global location redirect routines and aligning the design layout with other existing guest warning templates (e.g. in Profile) keeps the user experience highly consistent.
 
