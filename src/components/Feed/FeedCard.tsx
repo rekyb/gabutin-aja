@@ -271,9 +271,11 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
             <div className="space-y-4">
               {isCorrect && (
                 <>
-                  <p className="font-sans font-extrabold text-3xl text-primary tracking-wide">
-                    +{response.xpDelta} XP
-                  </p>
+                  {response.xpDelta > 0 && (
+                    <p className="font-sans font-extrabold text-3xl text-primary tracking-wide">
+                      +{response.xpDelta} XP
+                    </p>
+                  )}
                   <p className="font-sans font-bold text-lg text-foreground flex items-center gap-2">
                     Nah bener! Menyala ilmu lo!{' '}
                     <Sparkles className="h-5 w-5 text-accent fill-accent animate-pulse" />
@@ -419,9 +421,11 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
                     <span className="font-sans font-black text-sm text-primary flex items-center gap-1.5 uppercase">
                       <Check className="h-4 w-4 stroke-3" /> BENAR!
                     </span>
-                    <span className="font-sans font-extrabold text-sm text-primary tracking-wide">
-                      +{response.xpDelta} XP
-                    </span>
+                    {response.xpDelta > 0 && (
+                      <span className="font-sans font-extrabold text-sm text-primary tracking-wide">
+                        +{response.xpDelta} XP
+                      </span>
+                    )}
                   </>
                 )}
                 {isWrong && (

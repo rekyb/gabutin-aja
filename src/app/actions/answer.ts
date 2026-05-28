@@ -9,7 +9,7 @@ import type { AnswerResult, SubmitAnswerResponse } from '@/types'
 import { calculateXP, calculatePointsDelta, computeLevel } from '@/lib/scoring/formulas'
 
 type LeanUser = { _id: mongoose.Types.ObjectId; xp: number; level: number; currentStreak: number }
-type LeanCard = { _id: mongoose.Types.ObjectId; theme: string; correctIndex: number }
+type LeanCard = { _id: mongoose.Types.ObjectId | string; theme: string; correctIndex: number }
 type LeanThemeScore = { points: number }
 
 export async function submitAnswer(
@@ -19,10 +19,33 @@ export async function submitAnswer(
 ): Promise<SubmitAnswerResponse> {
   await connectDB()
 
-  const [user, card] = await Promise.all([
-    User.findOne({ uniqueUserId: userId }).lean<LeanUser>(),
-    Card.findById(cardId).lean<LeanCard>(),
-  ])
+  let user: LeanUser | null = null
+  let card: LeanCard | null = null
+
+  const isMock = !mongoose.Types.ObjectId.isValid(cardId)
+
+  if (!isMock) {
+    const [dbUser, dbCard] = await Promise.all([
+      User.findOne({ uniqueUserId: userId }).lean<LeanUser>(),
+      Card.findById(cardId).lean<LeanCard>(),
+    ])
+    user = dbUser
+    card = dbCard
+  } else {
+    user = await User.findOne({ uniqueUserId: userId }).lean<LeanUser>()
+    const mockCards = [
+      { _id: 'mock-card-1', theme: 'sains', correctIndex: 0 },
+      { _id: 'mock-card-2', theme: 'sejarah_indonesia', correctIndex: 2 },
+    ]
+    const found = mockCards.find((c) => c._id === cardId)
+    if (found) {
+      card = {
+        _id: found._id,
+        theme: found.theme,
+        correctIndex: found.correctIndex,
+      }
+    }
+  }
 
   if (!card) throw new Error(`Card not found: ${cardId}`)
 
@@ -41,7 +64,7 @@ export async function submitAnswer(
   }
 
   // First-attempt XP guard: only award XP on the first answer per card
-  const alreadyAnswered = await Answer.exists({ userId: user._id, cardId: card._id })
+  const alreadyAnswered = isMock ? false : await Answer.exists({ userId: user._id, cardId: card._id })
   const xpDelta = alreadyAnswered ? 0 : calculateXP(result, user.currentStreak)
 
   const newStreak = result === 'correct' ? user.currentStreak + 1 : 0
@@ -66,7 +89,10 @@ export async function submitAnswer(
     { _id: user._id },
     { $inc: incFields, $set: { currentStreak: newStreak, level: newLevel } },
   )
-  await Answer.create({ userId: user._id, cardId: card._id, theme: card.theme, result, pointsDelta, xpDelta })
+
+  if (!isMock) {
+    await Answer.create({ userId: user._id, cardId: card._id, theme: card.theme, result, pointsDelta, xpDelta })
+  }
 
   return { result, pointsDelta, xpDelta, newStreak, newLevel, leveledUp, newAchievements: [] }
 }
