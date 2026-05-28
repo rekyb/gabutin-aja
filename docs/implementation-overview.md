@@ -17,6 +17,7 @@
 | E02 | [Guest Identity & Onboarding](./epic/e02-guest-identity-onboarding.md) | [DONE] | E01 | E03, E05, E09 |
 | E03 | [Card Generation Pipeline](./epic/e03-card-generation-pipeline.md) | [DONE] | E01 | E02, E05, E09 |
 | E04 | [Feed & Card Lifecycle](./epic/e04-feed-card-lifecycle.md) | [DONE] | E01, E02, E03 | E06, E07, E08, E09 |
+| E04-01 | UX Revamp (Feed & Card) | [DONE] | E04 | E05, E06, E07, E09 |
 | E05 | [Scoring Engine](./epic/e05-scoring-engine.md) | [ ] | E01 | E02, E03, E09 |
 | E06 | [Achievement System](./epic/e06-achievement-system.md) | [ ] | E01, E02, E05 | E07, E08, E09 |
 | E07 | [Adaptive Feed Algorithm](./epic/e07-adaptive-feed-algorithm.md) | [ ] | E01, E02, E03, E05 | E06, E08, E09 |
@@ -40,10 +41,11 @@ Wave 2 (unblock most tracks after E01):
   E05 — Scoring Engine
 
 Wave 3 (feeds need data layer ready):
-  E04 — Feed & Card Lifecycle                      [DONE]
-  E06 — Achievement System      (after E02, E05)
-  E07 — Adaptive Feed Algorithm (after E02, E03, E05)
-  E09 — PWA & Analytics         (after E02)
+  E04    — Feed & Card Lifecycle                   [DONE]
+  E04-01 — UX Revamp (Feed & Card)                [DONE]
+  E06    — Achievement System      (after E02, E05)
+  E07    — Adaptive Feed Algorithm (after E02, E03, E05)
+  E09    — PWA & Analytics         (after E02)
 
 Wave 4 (stitches everything):
   E08 — Profile Page            (after E02, E05, E06)

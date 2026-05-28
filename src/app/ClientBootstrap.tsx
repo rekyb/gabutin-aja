@@ -2,8 +2,9 @@
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { generateUniqueUserId } from '@/utils/user-id'
-import { getUniqueUserId, setUniqueUserId, isGuestOnly, clearGuestOnly } from '@/lib/guest-state'
+import { getUniqueUserId, setUniqueUserId, clearGuestOnly } from '@/lib/guest-state'
 import { getUserByUniqueId } from '@/app/actions/user'
+import { useFeedStore } from '@/store/feedStore'
 
 export function ClientBootstrap() {
   const pathname = usePathname()
@@ -25,6 +26,11 @@ export function ClientBootstrap() {
             setUniqueUserId(serverUid)
           }
 
+          // Sync feedStore's userId with server-side authenticated user ID if it is currently different
+          if (useFeedStore.getState().userId !== serverUid) {
+            useFeedStore.setState({ userId: serverUid })
+          }
+
           // Clear guest-only status since user is authenticated
           clearGuestOnly()
 
@@ -43,18 +49,18 @@ export function ClientBootstrap() {
       if (!uid) {
         const newId = generateUniqueUserId()
         setUniqueUserId(newId)
-        if (pathname !== '/welcome') {
-          router.replace('/welcome')
-        }
+        // Also sync feedStore's userId
+        useFeedStore.setState({ userId: newId })
         return
       }
 
-      // Returning user on /welcome: redirect to /feed if guest or registered
+      // Also sync feedStore's userId for returning guest
+      if (useFeedStore.getState().userId !== uid) {
+        useFeedStore.setState({ userId: uid })
+      }
+
+      // Returning user on /welcome: redirect to /feed if fully registered in DB
       if (pathname === '/welcome') {
-        if (isGuestOnly()) {
-          router.replace('/feed')
-          return
-        }
         const user = await getUserByUniqueId(uid)
         if (user) {
           router.replace('/feed')

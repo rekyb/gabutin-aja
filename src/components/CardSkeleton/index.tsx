@@ -3,22 +3,56 @@ import { Skeleton } from '@/components/Skeleton'
 
 export const CardSkeleton: FC = () => {
   return (
-    <div className="bg-sidebar overflow-hidden flex flex-col border-2 border-(--color-card-stroke) shadow-[4px_4px_0px_0px_var(--color-shadow)] flex-1 min-h-0 w-full max-w-[490px] lg:w-[430px] lg:max-w-none">
-      {/* Image area */}
-      <div className="h-[35%] lg:h-[45%] shrink-0 bg-muted overflow-hidden">
-        <Skeleton className="w-full h-full" />
+    <>
+      {/* Mobile Card Skeleton (Instagram style) */}
+      <div className="lg:hidden bg-sidebar overflow-hidden flex flex-col border-2 border-(--color-card-stroke) shadow-[4px_4px_0px_0px_var(--color-shadow)] w-full max-w-[490px]">
+        {/* Image area */}
+        <div className="aspect-16/10 shrink-0 bg-muted overflow-hidden">
+          <Skeleton className="w-full h-full" />
+        </div>
+
+        {/* Content panel */}
+        <div className="p-6 flex flex-col gap-4">
+          <div className="space-y-3">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-5/6" />
+            <Skeleton className="h-5 w-4/6" />
+          </div>
+          <Skeleton className="h-10 w-24 shrink-0 self-end mt-2" />
+        </div>
       </div>
 
-      {/* Content panel */}
-      <div className="flex-1 flex flex-col overflow-hidden p-6 gap-4">
-        <div className="space-y-3 flex-1">
-          <Skeleton className="h-5 w-full" />
-          <Skeleton className="h-5 w-5/6" />
-          <Skeleton className="h-5 w-4/6" />
-          <Skeleton className="h-4 w-24 mt-2" />
+      {/* Desktop Card Skeleton (X/Twitter style) */}
+      <div className="hidden lg:block w-full border-b border-border p-6">
+        {/* Right Column: Post Body skeleton */}
+        <div className="w-full space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            <Skeleton className="h-3 w-20" />
+          </div>
+
+          {/* Fact Caption */}
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-5/6" />
+          </div>
+
+          {/* Media block skeleton */}
+          <div className="aspect-16/10 border-2 border-border overflow-hidden w-full bg-sidebar">
+            <Skeleton className="w-full h-full" />
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-8 w-20" />
+          </div>
         </div>
-        <Skeleton className="h-12 w-full shrink-0" />
       </div>
-    </div>
+    </>
   )
 }

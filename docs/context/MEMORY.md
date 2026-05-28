@@ -6,6 +6,84 @@
 
 ## Session History
 
+### [2026-05-28] Session 17: Resolve Unit Test Coverage Threshold Failures
+- **Task/Epic Status:**
+  - **Task:** Resolve function coverage deficit and satisfy 80% coverage threshold.
+  - **Gate 3 (QA):** Passed — vitest 75/75 passing, 100% statement/branch/function coverage on guest-state.ts and expanded LoginModal.test.tsx.
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - `src/lib/guest-state.test.ts` (NEW) — Thorough unit tests for the guest-state library, covering progress syncing, identity storage, card counters, reminder timers, and re-engagement conditional checks.
+  - `src/components/LoginModal/LoginModal.test.tsx` — Expanded test assertions to mock `globalThis.location` via Vitest stubs, verifying button click redirections and local storage mutations.
+- **Discoveries & Technical Insights:**
+  - `vi.stubGlobal('location', ...)` is an extremely reliable and clean way to spy on and mock the global `location` object in jsdom environments under Vitest, avoiding browser navigation issues.
+  - Setting up tests for isolated library modules keeps function coverage at 100% and prevents codebases from failing global CI threshold checks.
+- **Patterns (What Worked Well):**
+  - Isolating test coverage checks for local state/storage utilities from dynamic database operations.
+  - Asserting exact global location state transitions ensures that navigation actions in non-Next.js routing boundaries work as expected.
+
+### [2026-05-28] Session 16: E04-01 — UX Revamp & Instagram-Style Scrolling
+- **Task/Epic Status:**
+  - **Epic:** E04-01 — UX Revamp (Feed & Card)
+  - **Gate 3 (QA):** Passed — vitest 59/59, tsc clean
+  - **Status:** **DONE** — merged to main manually
+- **What Was Implemented:**
+  - `src/store/uiStore.ts` (NEW) — Zustand singleton: `showLoginModal`, `openLoginModal()`, `closeLoginModal()`.
+  - `src/components/LoginModal/index.tsx` (NEW) — Neobrutalist modal with Google + Guest login options.
+  - `src/components/AppBar/index.tsx` — Added "Saran dong" + conditional "Masuk" (hidden when DB user exists). Mobile only via `lg:hidden` in layout.
+  - `src/components/DesktopHeader/index.tsx` (NEW) — `fixed top-4 right-6 z-30 hidden lg:flex` with same buttons.
+  - `src/app/layout.tsx` — Mounts `<LoginModal />` and `<DesktopHeader />` globally inside Providers.
+  - `src/app/welcome/WelcomeClient.tsx` — Removed tutorial entirely; registration-only form (display name + ThemePicker). Added `clearGuestOnly()` after successful `createUser()`.
+  - `src/app/ClientBootstrap.tsx` — Removed first-visit redirect to `/welcome`; new visitors land on `/feed` with a generated `uniqueUserId`.
+  - `src/store/feedStore.ts` — Redesigned to `cards: CardDoc[]` list. `loadInitialCards()` pre-populates 3 cards; `loadMoreCards()` appends on scroll.
+  - `src/components/Feed/FeedCard.tsx` (NEW) — Per-card state machine (`fact → question → result`) with dual mobile (CardShell) / desktop (X post-style) inline rendering.
+  - `src/components/FeedClient/index.tsx` — Vertical flex list + `IntersectionObserver` infinite scroll. All swipe/wheel hijacking removed.
+  - `src/components/CardShell/index.tsx` — Removed rigid full-height mode and `naturalHeight` prop. Single natural-height layout only.
+  - Deleted orphaned E04 standalone components: `CardFact`, `CardQuestion`, `CardResult`, `CardNext` + their test files.
+- **Discoveries & Technical Insights:**
+  - `--radius-full: 0px` in `globals.css @theme inline` silently kills `rounded-full` everywhere. Use `style={{ borderRadius: '9999px' }}` for any element that genuinely needs a circle.
+  - `clearGuestOnly()` must be called after `createUser()` in `WelcomeClient`; without it, registered users kept `guestOnly=true` and hit the re-engagement card after 15 cards.
+- **Patterns (What Worked Well):**
+  - Dual `lg:hidden` / `hidden lg:block` wrappers inside a single `FeedCard` keeps all per-card state in one place while allowing completely different layouts per breakpoint.
+- **Anti-Patterns to Avoid:**
+  - Never use `rounded-full` for elements that must always be circular — `--radius-full: 0px` makes it a square. Use `style={{ borderRadius: '9999px' }}` instead.
+  - Do not leave `guestOnly` set after successful DB registration — it poisons the re-engagement check for registered users.
+
+### [2026-05-28] Session 15: Clean up Tailwind CSS v4 & Legacy Bracket Syntax Warnings
+- **Task/Epic Status:**
+  - **Task:** Resolve lint/style warnings from `@current_problems`.
+  - **Gate 3 (QA):** Passed — vitest 59/59 passing, Next.js compilation clean.
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - `src/components/CardShell/index.tsx` — Replaced legacy Tailwind bracket syntax `aspect-[16/10]` with Tailwind CSS v4 native `aspect-16/10`.
+  - `src/components/CardSkeleton/index.tsx` — Replaced all occurrences of `aspect-[16/10]` with native `aspect-16/10`.
+  - `src/components/Feed/FeedCard.tsx` — Replaced all occurrences of `aspect-[16/10]` with `aspect-16/10` and optimized arbitrary spacing units `min-h-[5rem]` to standard utility `min-h-20` across both mobile and desktop viewports. Also removed unused destructured variable `selectedAnswer` and converted `.replace(/_/g, ...)` to modern `.replaceAll('_', ...)` string formatting.
+  - `src/components/LoginModal/index.tsx` — Replaced legacy CSS custom variable syntax `border-[var(--color-card-stroke)]` with Tailwind CSS v4 variable syntax `border-(--color-card-stroke)`.
+  - `src/store/feedStore.ts` — Replaced legacy references to `window` with direct `globalThis.window === undefined` checks during identity and re-engagement SSR safety checks, and optimized array end-lookup `list[list.length - 1]` to standard `list.at(-1)` structure.
+  - `src/components/FeedClient/index.tsx` — Removed unused destructured variable `userId` from store invocation.
+  - `src/app/ClientBootstrap.tsx` — Removed unused import of `isGuestOnly`.
+- **Discoveries & Technical Insights:**
+  - Tailwind CSS v4 natively recognizes parenthesized syntax for variable hooks `class-(--var-name)` and simplified aspect ratio `aspect-W/H` declarations, bypassing the need for bracket notation.
+- **Patterns (What Worked Well):**
+  - Promptly cleaning up Tailwind warnings maintains clean build logs and adheres perfectly to strict Tailwind v4 compatibility.
+
+### [2026-05-28] Session 14: Client State Management & Google/Guest Sync Fixes
+- **Task/Epic Status:**
+  - **Task:** Check client state management, fix guest/auth state mismatch resets.
+  - **Gate 3 (QA):** Passed — vitest 67/67 passing, typescript compilation clean, Next.js build success
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - `src/store/feedStore.ts` — Fixed the bug where the feed store read the `uniqueUserId`, `guestOnly`, and engagement metrics from the wrong localStorage key (`gabutin_user` instead of `uniqueUserId`/`guestOnly`). Replaced the custom direct localStorage parsers in `readUserId()` and `checkReEngagement()` with imported central helpers: `getUniqueUserId()`, `isGuestOnly()`, and `shouldShowReEngagement()`.
+  - `src/app/ClientBootstrap.tsx` — Wired direct store synchronization. When `ClientBootstrap` resolves the active session (either returning authenticated user or fallback guest), it immediately syncs the feed store's `userId` property to prevent split-brain states or race conditions when loading the feed.
+  - `src/components/Feed/FeedCard.tsx` — Removed the outer left border (`border-l-4`) and the bottom-left explanation block border (`border-l-2`) on the desktop results feed cards to produce a cleaner, flat tweet-like presentation. Added a clear Wikipedia source link (`Sumber Wikipedia`) below the explanation block on both Mobile and Desktop feedback cards (result phase).
+  - `src/components/LoginModal/index.tsx`, `src/app/welcome/WelcomeClient.tsx`, `src/components/ProfileClient/index.tsx` — Deployed a highly consistent Google button visual style across the entire application. All Google login/connect buttons now use the prominent teal primary color (`bg-primary`) instead of plain white, and the Google SVG logo is nested inside a crisp, high-contrast white circle wrapper (`bg-white rounded-full w-7 h-7 p-1`). This creates a strong, gorgeous neobrutalist visual language that guides light/dark mode users immediately toward active authentication.
+- **Discoveries & Technical Insights:**
+  - Storing identity variables (like `uniqueUserId`) in standalone keys in localStorage while progress (like XP and level) lives under `gabutin_user` requires strict imports from the central helper module (`guest-state.ts`) rather than manual `localStorage` parses. Manual parsers introduce high risks of key mismatches.
+  - Next.js App Router client bootstrap runs concurrently with component mounts. Dynamically syncing global Zustand state from inside `ClientBootstrap`'s mount effect ensures children are immediately updated with correct session credentials.
+- **Patterns (What Worked Well):**
+  - Isolating localStorage helpers in a dedicated module (`src/lib/guest-state.ts`) and reusing them inside Zustand stores avoids redundant parsing code and ensures single-source-of-truth access.
+- **Anti-Patterns to Avoid:**
+  - Do NOT write inline `localStorage.getItem` or `JSON.parse` blocks inside Zustand stores if a dedicated helper module already exists; always use the exported helper functions to maintain consistency.
+
 ### [2026-05-28] Session 13: Google OAuth Onboarding Polish, Toast System & Welcome UX Overhaul
 - **Task/Epic Status:**
   - **Task:** Google onboarding flow (new vs returning), toast system, welcome UX cleanup
