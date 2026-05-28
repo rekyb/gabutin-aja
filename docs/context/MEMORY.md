@@ -6,6 +6,21 @@
 
 ## Session History
 
+### [2026-05-28] Session 17: Resolve Unit Test Coverage Threshold Failures
+- **Task/Epic Status:**
+  - **Task:** Resolve function coverage deficit and satisfy 80% coverage threshold.
+  - **Gate 3 (QA):** Passed — vitest 75/75 passing, 100% statement/branch/function coverage on guest-state.ts and expanded LoginModal.test.tsx.
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - `src/lib/guest-state.test.ts` (NEW) — Thorough unit tests for the guest-state library, covering progress syncing, identity storage, card counters, reminder timers, and re-engagement conditional checks.
+  - `src/components/LoginModal/LoginModal.test.tsx` — Expanded test assertions to mock `globalThis.location` via Vitest stubs, verifying button click redirections and local storage mutations.
+- **Discoveries & Technical Insights:**
+  - `vi.stubGlobal('location', ...)` is an extremely reliable and clean way to spy on and mock the global `location` object in jsdom environments under Vitest, avoiding browser navigation issues.
+  - Setting up tests for isolated library modules keeps function coverage at 100% and prevents codebases from failing global CI threshold checks.
+- **Patterns (What Worked Well):**
+  - Isolating test coverage checks for local state/storage utilities from dynamic database operations.
+  - Asserting exact global location state transitions ensures that navigation actions in non-Next.js routing boundaries work as expected.
+
 ### [2026-05-28] Session 16: E04-01 — UX Revamp & Instagram-Style Scrolling
 - **Task/Epic Status:**
   - **Epic:** E04-01 — UX Revamp (Feed & Card)
