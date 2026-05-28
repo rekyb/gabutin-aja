@@ -75,7 +75,7 @@ export async function submitAnswer(
   }
 
   // Read consecutiveWrongs BEFORE updating (needed for comeback achievement checks)
-  const previousConsecutiveWrongs = user.consecutiveWrongs
+  const previousConsecutiveWrongs = user.consecutiveWrongs ?? 0
 
   // First-attempt XP guard: only award XP on the first answer per card
   const alreadyAnswered = isMock ? false : await Answer.exists({ userId: user._id, cardId: card._id })
@@ -119,11 +119,11 @@ export async function submitAnswer(
 
   const newAchievements = await checkAchievements({
     userId: (user._id as mongoose.Types.ObjectId).toString(),
-    totalAnswers: user.totalAnswers + 1,
+    totalAnswers: (user.totalAnswers ?? 0) + 1,
     currentStreak: newStreak,
     level: newLevel,
     themeScores: { [card.theme]: updatedPoints },
-    totalSkips: result === 'skip' ? user.totalSkips + 1 : user.totalSkips,
+    totalSkips: result === 'skip' ? (user.totalSkips ?? 0) + 1 : (user.totalSkips ?? 0),
     consecutiveWrongs: previousConsecutiveWrongs,
     result,
   })
