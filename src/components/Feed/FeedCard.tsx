@@ -49,11 +49,25 @@ const themeDisplayNames: Record<string, string> = {
   tutorial: 'Tutorial',
 }
 
+function buildShuffledOrder(cardId: string, optionCount: number): number[] {
+  const arr = Array.from({ length: optionCount }, (_, i) => i)
+  let seed = [...cardId].reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) % 1_000_000_007, 0)
+  for (let i = optionCount - 1; i > 0; i--) {
+    seed = (seed * 1664525 + 1013904223) >>> 0
+    const j = seed % (i + 1)
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
 export const FeedCard: FC<FeedCardProps> = ({ card }) => {
   const [timeLeft, setTimeLeft] = useState(10)
   const [userId, setUserId] = useState('')
   const [streak, setStreak] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Stable shuffle per card — computed once on mount, seeded by card._id
+  const [shuffledOrder] = useState<number[]>(() => buildShuffledOrder(card._id, card.options.length))
 
   const appendAchievements = useFeedStore((s) => s.appendAchievements)
   const cardStates = useFeedStore((s) => s.cardStates)
@@ -112,18 +126,20 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
   }, [phase])
 
   // 3. Actions
-  async function handleSubmit(index: number | null, isTimeout = false) {
+  async function handleSubmit(shuffledIndex: number | null, isTimeout = false) {
     if (!userId || isSubmitting) return
     setIsSubmitting(true)
+    // Remap shuffled index back to the original option index for server-side scoring
+    const originalIndex = shuffledIndex !== null ? shuffledOrder[shuffledIndex] : null
     try {
-      const res = await submitAnswer(userId, card._id, index)
+      const res = await submitAnswer(userId, card._id, originalIndex)
       setStreak(res.newStreak)
       if (res.newAchievements && res.newAchievements.length > 0) {
         appendAchievements(res.newAchievements)
       }
       updateCardState(card._id, {
         phase: 'result',
-        selectedAnswer: index,
+        selectedAnswer: shuffledIndex,
         response: res,
         wasTimeout: isTimeout,
       })
@@ -205,17 +221,17 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
             </div>
 
             <div className="space-y-2">
-              {card.options.map((option, i) => (
+              {shuffledOrder.map((originalIdx, shuffledIdx) => (
                 <button
-                  key={`opt-${option}`}
-                  onClick={() => handleSubmit(i, false)}
+                  key={`opt-${originalIdx}`}
+                  onClick={() => handleSubmit(shuffledIdx, false)}
                   disabled={isSubmitting}
                   className={`${MCQ_OPTION} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 cursor-pointer`}
                 >
                   <span className="font-mono text-muted-foreground mr-2">
-                    {String.fromCodePoint(65 + i)}.
+                    {String.fromCodePoint(65 + shuffledIdx)}.
                   </span>
-                  {option}
+                  {card.options[originalIdx]}
                 </button>
               ))}
             </div>
@@ -364,17 +380,17 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
 
               {/* Stacked Options */}
               <div className="space-y-2">
-                {card.options.map((option, i) => (
+                {shuffledOrder.map((originalIdx, shuffledIdx) => (
                   <button
-                    key={`opt-${option}`}
-                    onClick={() => handleSubmit(i, false)}
+                    key={`opt-${originalIdx}`}
+                    onClick={() => handleSubmit(shuffledIdx, false)}
                     disabled={isSubmitting}
                     className={`${MCQ_OPTION} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 cursor-pointer text-sm`}
                   >
                     <span className="font-mono text-muted-foreground mr-2">
-                      {String.fromCodePoint(65 + i)}.
+                      {String.fromCodePoint(65 + shuffledIdx)}.
                     </span>
-                    {option}
+                    {card.options[originalIdx]}
                   </button>
                 ))}
               </div>
