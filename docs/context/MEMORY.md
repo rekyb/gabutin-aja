@@ -8,13 +8,14 @@
 
 ### [2026-05-28] Session 21: Achievements Guest Warning Prompt
 - **Task/Epic Status:**
-  - **Task:** Achievements Guest Warning Prompt, Redesigned Toast Notification, Color Registration & Branding
+  - **Task:** Achievements Guest Warning Prompt, Redesigned Toast Notification, Color Registration, Branding & UI Polish
   - **Gate 3 (QA):** Passed — vitest 150/150, tsc clean, next build clean, 100% test coverage on warning prompt, toast redesign, and renames.
   - **Status:** **DONE** — staged and committed
 - **What Was Implemented:**
   - `src/app/achievements/AchievementsClient.tsx` (MODIFIED) — Added an elegant, premium neobrutalist warning banner/prompt shown when the user is playing as a guest (`userId` is empty). The banner contains the exact warning text and a high-impact 'Simpan Progres' CTA button connecting the guest account to Google. Renamed page header title from `'Achievements'` to `'Flexing'` and renamed counter text from `'badge diraih'` to `'lencana diraih'` to align branding and Indonesian translation across the dashboard UI.
   - `src/app/achievements/AchievementsClient.test.tsx` (MODIFIED) — Updated unit test assertions to match the new `'Flexing'` title layout.
   - `src/app/actions/answer.ts` (MODIFIED) — Implemented safe coalescing fallbacks (`?? 0`) on `totalAnswers`, `totalSkips`, and `consecutiveWrongs` inside the scoring action. Extended the guest handler: if a new guest plays the feed directly (without finishing onboarding `/welcome`), `submitAnswer` automatically initializes and inserts a guest `User` record in MongoDB, enabling full progression and immediate achievement yielding on the feed.
+  - `src/components/Feed/FeedCard.tsx` (MODIFIED) — Increased the font size of the Wikipedia article title by one level: from `text-lg` to `text-xl` on mobile views and from `text-sm` (inherited) to `text-base` + `font-black` on desktop views, enhancing readability.
   - `src/components/AchievementToast/index.tsx` (MODIFIED) — Redesigned the toast component to be extremely vibrant and match the dark, high-vibe neobrutalist mockup: features a dark background, bold white title, light gray description, large emojis, and dynamic borders/shadows matching the achievement's rarity tier. Imported styles directly from `design-tokens.ts`.
   - `src/lib/design-tokens.ts` (MODIFIED) — Centralized the new vibrant rarity hexes, text classes, and border styles in `RARITY_COLORS` and `RARITY_BORDER_COLORS` so the main `/achievements` badges visually match the toast presentation. Centralized and exported the `VIBRANT_RARITY_THEMES` dictionary.
   - `src/app/globals.css` (MODIFIED) — Added slideUp keyframe animations and `.animate-slide-up` utility class with polished cubic-bezier easing to dynamically slide and fade toast notifications in from the bottom.

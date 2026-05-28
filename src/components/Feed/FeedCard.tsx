@@ -187,7 +187,7 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
               </div>
             }
           >
-            <h3 className="font-sans font-black text-lg text-foreground mb-1 uppercase tracking-wide">
+            <h3 className="font-sans font-black text-xl text-foreground mb-1 uppercase tracking-wide">
               {articleTitle}
             </h3>
             <p className="font-serif italic text-base leading-relaxed text-foreground/90">
@@ -326,7 +326,7 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
           
           {/* Header Actions & Meta */}
           <div className="flex items-center justify-between text-sm pb-1 border-b border-border/10">
-            <span className="font-sans font-extrabold text-foreground">{articleTitle}</span>
+            <span className="font-sans font-black text-base text-foreground">{articleTitle}</span>
           </div>
 
           {/* STATE 1: Fact Post */}
