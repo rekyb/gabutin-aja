@@ -8,6 +8,7 @@ import { ThemeScore } from '@/db/models/ThemeScore'
 import type { AnswerResult, SubmitAnswerResponse } from '@/types'
 import { calculateXP, calculatePointsDelta, computeLevel } from '@/lib/scoring/formulas'
 import { checkAchievements } from '@/lib/achievements/check'
+import { createUser } from '@/app/actions/user'
 
 type LeanUser = {
   _id: mongoose.Types.ObjectId
@@ -69,9 +70,15 @@ export async function submitAnswer(
 
   const pointsDelta = calculatePointsDelta(result)
 
-  // Guest (no DB user record) — return computed result without DB writes
+  // Guest (no DB user record) — automatically create guest record so their progress/achievements are tracked!
   if (!user) {
-    return { result, pointsDelta, xpDelta: 0, newStreak: 0, newLevel: 1, leveledUp: false, newAchievements: [] }
+    const defaultDisplayName = `Tamu-${userId.slice(-4)}`
+    const defaultThemes = ['sains', 'pop_culture', 'sejarah_indonesia']
+    const { userId: newDbUserId } = await createUser(defaultDisplayName, defaultThemes as any[], userId)
+    user = await User.findById(newDbUserId).lean<LeanUser>()
+    if (!user) {
+      throw new Error('Failed to auto-create guest user')
+    }
   }
 
   // Read consecutiveWrongs BEFORE updating (needed for comeback achievement checks)
