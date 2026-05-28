@@ -4,7 +4,7 @@ import { Logo } from '@/components/Logo'
 import { useUiStore } from '@/store/uiStore'
 import { getUniqueUserId } from '@/lib/guest-state'
 import { getUserByUniqueId } from '@/app/actions/user'
-import { BUTTON_PRESS } from '@/lib/design-tokens'
+import { Button } from '@/components/Button'
 
 interface AppBarProps {
   className?: string
@@ -55,14 +55,17 @@ export const AppBar: FC<AppBarProps> = ({ className }) => {
         </a>
 
         {!isOnboarded && (
-          <button
+          <Button
             onClick={openLoginModal}
-            className={`${BUTTON_PRESS} bg-primary border-2 border-border font-mono font-bold text-[10px] sm:text-xs px-3 py-1 text-primary-foreground transition-all cursor-pointer`}
+            variant="primary"
+            size="sm"
+            className="text-[10px] sm:text-xs py-1 px-3"
           >
             Masuk
-          </button>
+          </Button>
         )}
       </div>
     </header>
   )
 }
+

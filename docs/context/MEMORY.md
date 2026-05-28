@@ -6,6 +6,27 @@
 
 ## Session History
 
+### [2026-05-28] Session 22: Achievements Auto-Unlock & Guest Hydration
+- **Task/Epic Status:**
+  - **Task:** Automatic Achievements Unlocking & Client Hydration for Guest Users, Reusable Global Button Component & Codebase Button Migration
+  - **Gate 3 (QA):** Passed — vitest 159/159 passing, next build success, zero compilation warnings, and full test coverage for client-side hydration and the global Button component.
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - `src/app/actions/answer.ts` (MODIFIED) — Updated `submitAnswer` to retrieve and build a complete `themeScoresMap` mapping points across all themes. This ensures theme-based achievements (`theme_focused` and `theme_master`) are checked against the user's complete history rather than only the current question's theme, fixing the bug that prevented accurate unlocking.
+  - `src/app/actions/achievements.ts` (MODIFIED) — Added an on-demand `checkAchievements` call inside `getUserAchievements`. Whenever achievements are retrieved (for both authenticated and guest users), their current statistics and progress are evaluated to automatically unlock and persist any newly qualified achievements to MongoDB.
+  - `src/app/achievements/AchievementsClient.tsx` (MODIFIED) — Converted props (`achievements`, `stats`, `userId`) to local react state. Wired `useEffect` client-side hydration for guest users; on mount, if the visitor is a guest, their achievements and statistics are fetched from the database using `getGuestAchievementsData` and local state is populated. Pin and unpin actions fetch the refreshed achievements state to update guest UI immediately. Imported `VIBRANT_RARITY_THEMES` and applied each achievement's specific rarity border and neobrutalist hard shadow classes to the earned badge cards, bringing the exact mockup-perfect color vibration to the achievements grid dashboard. Consumed the global `<Button />` component for warning banner CTA and Pin/Unpin actions.
+  - `src/app/achievements/AchievementsClient.test.tsx` (MODIFIED) — Added a unit test validating that `getGuestAchievementsData` is called for guest users on mount and successfully hydrates the component, updating the earned lencana counter on the UI.
+  - `src/components/Button/index.tsx` (NEW) — Implemented a globally reusable neobrutalist `Button` component that standardizes our button elements. Features exact active press animations (`BUTTON_PRESS`), five variants (`primary`, `secondary`, `outline`, `ghost`, `danger`), three sizing tiers (`sm`, `md`, `lg`), customizable width parameters, built-in loading spinners, and robust icon styling slots (left/right).
+  - `src/components/Button/Button.test.tsx` (NEW) — Wrote comprehensive unit tests verifying children rendering, neobrutalist classes, sizing tiers, width behavior, icon layouts, loading-state disable behavior, and mouse click events, achieving 100% coverage.
+  - Button Consumption across Codebase (MODIFIED: `src/components/ThemeToggle/index.tsx`, `src/components/LoginModal/index.tsx`, `src/components/ReEngagementCard/index.tsx`, `src/components/AppBar/index.tsx`, `src/components/DesktopHeader/index.tsx`, `src/components/Feed/FeedCard.tsx`, `src/app/welcome/WelcomeClient.tsx`, `src/app/onboarding/OnboardingClient.tsx`, `src/components/ProfileClient/index.tsx`) — Replaced legacy raw HTML button structures and inline neobrutalist class styles across all codebase features with our unified `<Button />` component, ensuring consistent theme styling, sizes, loading states, and icons.
+- **Discoveries & Technical Insights:**
+  - Passing an incomplete, single-property dictionary for `themeScores` inside `submitAnswer` prevented cumulative check logic from matching other themes. Resolving this by constructing a comprehensive database map ensures precise unlock matches.
+  - Guest users landing directly on the feed and earning achievements stored under their `uniqueUserId` would see a fully locked, empty achievements page on `/achievements` because they lacked a session cookie. Hydrating their stats on client-mount by looking up their guest ID resolves this data visibility gap beautifully.
+  - In-memory react state synced with incoming server props provides an optimal UX bridge for hybrid components supporting both Server Components and localStorage-driven hydration.
+- **Patterns (What Worked Well):**
+  - Evaluating achievement checks on-demand during retrieval serves as a highly robust self-healing mechanism, automatically catching and unlocking any achievements that users qualified for but missed due to past edge cases.
+  - Standardizing key micro-interactive styles (such as shadows, outline border styles, loading states, and cursor settings) in a unified React component keeps layouts DRY and visual branding cohesive across modular page layers.
+
 ### [2026-05-28] Session 21: Achievements Guest Warning Prompt
 - **Task/Epic Status:**
   - **Task:** Achievements Guest Warning Prompt, Redesigned Toast Notification, Color Registration, Branding & UI Polish

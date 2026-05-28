@@ -3,8 +3,9 @@ import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trophy, Pin, PinOff, Lock, AlertTriangle } from 'lucide-react'
 import { ACHIEVEMENTS } from '@/lib/achievements/definitions'
-import { pinBadge, unpinBadge } from '@/app/actions/achievements'
-import { RARITY_COLORS, RARITY_BORDER_COLORS, SHADOW_HARD, BUTTON_PRESS } from '@/lib/design-tokens'
+import { pinBadge, unpinBadge, getGuestAchievementsData } from '@/app/actions/achievements'
+import { Button } from '@/components/Button'
+import { RARITY_COLORS, RARITY_BORDER_COLORS, SHADOW_HARD, VIBRANT_RARITY_THEMES } from '@/lib/design-tokens'
 import { getUniqueUserId } from '@/lib/guest-state'
 import type { UserAchievementDoc } from '@/types'
 
@@ -71,36 +72,75 @@ export function AchievementsClient({ achievements, userId, stats }: Achievements
   const [loadingKey, setLoadingKey] = useState<string | null>(null)
   const [guestUid, setGuestUid] = useState<string | null>(null)
 
+  // Local state to support client-side hydration for guest users
+  const [localAchievements, setLocalAchievements] = useState<UserAchievementDoc[]>(achievements)
+  const [localStats, setLocalStats] = useState<AchievementStats>(stats)
+  const [localUserId, setLocalUserId] = useState<string>(userId)
+
+  // Sync props to local state when they change server-side
   useEffect(() => {
-    setGuestUid(getUniqueUserId())
-  }, [])
+    setLocalAchievements(achievements)
+  }, [achievements])
+
+  useEffect(() => {
+    setLocalStats(stats)
+  }, [stats])
+
+  useEffect(() => {
+    setLocalUserId(userId)
+  }, [userId])
+
+  // Hydrate guest statistics and achievements on client mount
+  useEffect(() => {
+    const localUid = getUniqueUserId()
+    setGuestUid(localUid)
+    if (!userId && localUid) {
+      getGuestAchievementsData(localUid).then((data) => {
+        if (data) {
+          setLocalAchievements(data.achievements)
+          setLocalStats(data.stats)
+          setLocalUserId(localUid)
+        }
+      })
+    }
+  }, [userId])
 
   function handleGoogleConnect(uniqueUserId: string) {
     globalThis.location.href = `/api/auth/google?guest_uid=${uniqueUserId}`
   }
 
   const earnedMap = new Map<string, UserAchievementDoc>()
-  for (const a of achievements) {
+  for (const a of localAchievements) {
     earnedMap.set(a.achievementKey, a)
   }
 
-  const showcasedCount = achievements.filter((a) => a.isShowcased).length
+  const showcasedCount = localAchievements.filter((a) => a.isShowcased).length
 
   async function handlePin(achievementKey: string) {
-    if (!userId || isPending) return
+    if (!localUserId || isPending) return
     setLoadingKey(achievementKey)
     startTransition(async () => {
-      await pinBadge(userId, achievementKey)
+      await pinBadge(localUserId, achievementKey)
+      // Refetch and update local state to reflect pin changes immediately for guests
+      const data = await getGuestAchievementsData(localUserId)
+      if (data) {
+        setLocalAchievements(data.achievements)
+      }
       router.refresh()
       setLoadingKey(null)
     })
   }
 
   async function handleUnpin(achievementKey: string) {
-    if (!userId || isPending) return
+    if (!localUserId || isPending) return
     setLoadingKey(achievementKey)
     startTransition(async () => {
-      await unpinBadge(userId, achievementKey)
+      await unpinBadge(localUserId, achievementKey)
+      // Refetch and update local state to reflect unpin changes immediately for guests
+      const data = await getGuestAchievementsData(localUserId)
+      if (data) {
+        setLocalAchievements(data.achievements)
+      }
       router.refresh()
       setLoadingKey(null)
     })
@@ -114,7 +154,7 @@ export function AchievementsClient({ achievements, userId, stats }: Achievements
           Flexing
         </h1>
         <p className="font-mono text-sm text-muted-foreground">
-          {achievements.length}/17 lencana diraih
+          {localAchievements.length}/17 lencana diraih
           {showcasedCount > 0 && ` · ${showcasedCount}/3 dipasang`}
         </p>
       </div>
@@ -129,20 +169,23 @@ export function AchievementsClient({ achievements, userId, stats }: Achievements
             </p>
           </div>
           {guestUid && (
-            <button
+            <Button
               onClick={() => handleGoogleConnect(guestUid)}
-              className={`${BUTTON_PRESS} whitespace-nowrap bg-primary text-primary-foreground font-mono font-bold py-2 px-3 md:py-2.5 md:px-4 border-2 border-border flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors cursor-pointer text-xs md:text-sm shrink-0`}
+              variant="primary"
+              className="whitespace-nowrap shrink-0 text-xs md:text-sm py-2 px-3 md:py-2.5 md:px-4"
+              leftIcon={
+                <div className="bg-white rounded-full p-0.5 shrink-0 flex items-center justify-center w-5 h-5 md:w-6 md:h-6">
+                  <svg className="h-3 w-3 md:h-3.5 md:w-3.5" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
+                  </svg>
+                </div>
+              }
             >
-              <div className="bg-white rounded-full p-0.5 shrink-0 flex items-center justify-center w-5 h-5 md:w-6 md:h-6">
-                <svg className="h-3 w-3 md:h-3.5 md:w-3.5" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
-                </svg>
-              </div>
               Simpan Progres
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -155,14 +198,15 @@ export function AchievementsClient({ achievements, userId, stats }: Achievements
           const isPinned = earned?.isShowcased ?? false
           const isThisLoading = loadingKey === def.key
 
-          const rarityTextClass = RARITY_COLORS[def.rarity] ?? RARITY_COLORS.Common
-          const rarityBorderClass = RARITY_BORDER_COLORS[def.rarity] ?? RARITY_BORDER_COLORS.Common
+          const rarityTheme = VIBRANT_RARITY_THEMES[def.rarity] ?? VIBRANT_RARITY_THEMES.Common
+          const rarityTextClass = rarityTheme.labelColor
+          const rarityBorderClass = rarityTheme.borderColor
 
           if (isEarned) {
             return (
               <div
                 key={def.key}
-                className={`bg-card border-2 ${rarityBorderClass} ${SHADOW_HARD} p-4 space-y-3 flex flex-col`}
+                className={`bg-card border-2 ${rarityBorderClass} ${rarityTheme.shadowStyle} p-4 space-y-3 flex flex-col`}
               >
                 {/* Badge Icon + Rarity */}
                 <div className="flex items-start justify-between">
@@ -179,30 +223,38 @@ export function AchievementsClient({ achievements, userId, stats }: Achievements
                 </div>
 
                 {/* Pin / Unpin Button */}
-                {userId && (
+                {localUserId && (
                   <div className="pt-1">
                     {isPinned ? (
-                      <button
+                      <Button
                         id={`unpin-${def.key}`}
                         onClick={() => handleUnpin(def.key)}
-                        disabled={isThisLoading || isPending}
-                        className={`${BUTTON_PRESS} w-full flex items-center justify-center gap-1.5 font-mono text-xs border border-border py-1.5 px-3 text-muted-foreground hover:border-secondary hover:text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer disabled:opacity-50`}
+                        variant="ghost"
+                        size="sm"
+                        fullWidth
+                        isLoading={isThisLoading}
+                        disabled={isPending}
+                        leftIcon={<PinOff className="h-3 w-3" />}
+                        className="py-1.5 px-3 text-muted-foreground hover:border-secondary hover:text-secondary"
                         aria-pressed="true"
                       >
-                        <PinOff className="h-3 w-3" />
-                        {isThisLoading ? 'Loading...' : 'Unpin'}
-                      </button>
+                        Unpin
+                      </Button>
                     ) : (
-                      <button
+                      <Button
                         id={`pin-${def.key}`}
                         onClick={() => handlePin(def.key)}
-                        disabled={isThisLoading || isPending}
-                        className={`${BUTTON_PRESS} w-full flex items-center justify-center gap-1.5 font-mono text-xs border border-border py-1.5 px-3 text-muted-foreground hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer disabled:opacity-50`}
+                        variant="ghost"
+                        size="sm"
+                        fullWidth
+                        isLoading={isThisLoading}
+                        disabled={isPending}
+                        leftIcon={<Pin className="h-3 w-3" />}
+                        className="py-1.5 px-3 text-muted-foreground hover:border-primary hover:text-primary"
                         aria-pressed="false"
                       >
-                        <Pin className="h-3 w-3" />
-                        {isThisLoading ? 'Loading...' : 'Pin ke Profil'}
-                      </button>
+                        Pin ke Profil
+                      </Button>
                     )}
                   </div>
                 )}
@@ -211,7 +263,7 @@ export function AchievementsClient({ achievements, userId, stats }: Achievements
           }
 
           // Locked badge
-          const hint = getProgressHint(def.key, stats)
+          const hint = getProgressHint(def.key, localStats)
           return (
             <div
               key={def.key}

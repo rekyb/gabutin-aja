@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { ThemePicker } from '@/components/ThemePicker'
 import { completeOnboarding } from '@/app/actions/user'
 import { useFeedStore } from '@/store/feedStore'
-import { BUTTON_PRESS } from '@/lib/design-tokens'
+import { Button } from '@/components/Button'
 import { validateDisplayName, DISPLAY_NAME_MAX_LENGTH } from '@/utils/validators'
 import type { ThemeName } from '@/types'
 
@@ -79,14 +79,18 @@ export function OnboardingClient({ userId, defaultDisplayName, uniqueUserId }: P
 
         {error && <p className="font-mono text-sm text-secondary">{error}</p>}
 
-        <button
+        <Button
           onClick={handleSubmit}
-          disabled={!canSubmit || isSubmitting}
-          className={`${BUTTON_PRESS} w-full bg-primary text-primary-foreground font-mono font-bold py-3 border-2 border-border disabled:opacity-40 disabled:cursor-not-allowed`}
+          disabled={!canSubmit}
+          isLoading={isSubmitting}
+          variant="primary"
+          fullWidth
+          className="py-3"
         >
-          {isSubmitting ? 'Bentar...' : 'Mulai Gabutin!'}
-        </button>
+          Mulai Gabutin!
+        </Button>
       </div>
     </div>
   )
 }
+

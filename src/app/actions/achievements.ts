@@ -3,7 +3,9 @@ import mongoose from 'mongoose'
 import { connectDB } from '@/db/connect'
 import { User } from '@/db/models/User'
 import { UserAchievement } from '@/db/models/UserAchievement'
+import { ThemeScore } from '@/db/models/ThemeScore'
 import type { UserAchievementDoc } from '@/types'
+import { checkAchievements } from '@/lib/achievements/check'
 
 type LeanUserAchievement = {
   _id: mongoose.Types.ObjectId
@@ -20,8 +22,33 @@ type LeanUserAchievement = {
 export async function getUserAchievements(userId: string): Promise<UserAchievementDoc[]> {
   await connectDB()
 
-  const dbUser = await User.findOne({ uniqueUserId: userId }, { _id: 1 }).lean<{ _id: mongoose.Types.ObjectId }>()
+  const dbUser = await User.findOne(
+    { uniqueUserId: userId },
+    { _id: 1, totalAnswers: 1, totalSkips: 1, level: 1, currentStreak: 1, consecutiveWrongs: 1 }
+  ).lean<any>()
   if (!dbUser) return []
+
+  const themeScoreDocs = await ThemeScore.find(
+    { userId: dbUser._id },
+    { theme: 1, points: 1, _id: 0 },
+  ).lean<any[]>()
+
+  const themeScores: Record<string, number> = {}
+  for (const ts of themeScoreDocs) {
+    themeScores[ts.theme] = ts.points
+  }
+
+  // Automatically check and persist achievements they qualify for
+  await checkAchievements({
+    userId: dbUser._id.toString(),
+    totalAnswers: dbUser.totalAnswers ?? 0,
+    currentStreak: dbUser.currentStreak ?? 0,
+    level: dbUser.level ?? 1,
+    themeScores,
+    totalSkips: dbUser.totalSkips ?? 0,
+    consecutiveWrongs: dbUser.consecutiveWrongs ?? 0,
+    result: 'skip', // Dummy fallback for on-demand checks
+  })
 
   const docs = await UserAchievement.find(
     { userId: dbUser._id },
@@ -90,4 +117,40 @@ export async function unpinBadge(userId: string, achievementKey: string): Promis
     { userId: dbUser._id, achievementKey },
     { $set: { isShowcased: false, showcasePosition: null } },
   )
+}
+
+/**
+ * Fetches all achievements and statistics for a guest user by their uniqueUserId.
+ */
+export async function getGuestAchievementsData(uniqueUserId: string) {
+  await connectDB()
+  const dbUser = await User.findOne({ uniqueUserId }, {
+    uniqueUserId: 1, totalAnswers: 1, totalSkips: 1, level: 1, currentStreak: 1,
+  }).lean<any>()
+
+  if (!dbUser) return null
+
+  const [achievements, themeScoreDocs] = await Promise.all([
+    getUserAchievements(uniqueUserId),
+    ThemeScore.find(
+      { userId: dbUser._id },
+      { theme: 1, points: 1, _id: 0 },
+    ).lean<any[]>(),
+  ])
+
+  const themeScores: Record<string, number> = {}
+  for (const ts of themeScoreDocs) {
+    themeScores[ts.theme] = ts.points
+  }
+
+  return {
+    achievements,
+    stats: {
+      totalAnswers: dbUser.totalAnswers ?? 0,
+      totalSkips: dbUser.totalSkips ?? 0,
+      level: dbUser.level ?? 1,
+      currentStreak: dbUser.currentStreak ?? 0,
+      themeScores,
+    }
+  }
 }

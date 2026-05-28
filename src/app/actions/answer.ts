@@ -20,7 +20,7 @@ type LeanUser = {
   totalSkips: number
 }
 type LeanCard = { _id: mongoose.Types.ObjectId | string; theme: string; correctIndex: number }
-type LeanThemeScore = { points: number }
+type LeanThemeScore = { theme: string; points: number }
 
 export async function submitAnswer(
   userId: string,
@@ -120,16 +120,24 @@ export async function submitAnswer(
     await Answer.create({ userId: user._id, cardId: card._id, theme: card.theme, result, pointsDelta, xpDelta })
   }
 
-  // Fetch updated theme score for achievement context
+  // Fetch all theme scores for the user to provide a complete context to checkAchievements
+  const themeScoresDocs = await ThemeScore.find({ userId: user._id }).lean<LeanThemeScore[]>()
+  const themeScoresMap: Record<string, number> = {}
+  for (const ts of themeScoresDocs) {
+    themeScoresMap[ts.theme] = ts.points
+  }
+
+  // Ensure the updated points for the current theme are correctly set in the map
   const updatedThemeScore = await ThemeScore.findOne({ userId: user._id, theme: card.theme }).lean<LeanThemeScore>()
   const updatedPoints = updatedThemeScore?.points ?? currentPoints + flooredDelta
+  themeScoresMap[card.theme] = updatedPoints
 
   const newAchievements = await checkAchievements({
     userId: (user._id as mongoose.Types.ObjectId).toString(),
     totalAnswers: (user.totalAnswers ?? 0) + 1,
     currentStreak: newStreak,
     level: newLevel,
-    themeScores: { [card.theme]: updatedPoints },
+    themeScores: themeScoresMap,
     totalSkips: result === 'skip' ? (user.totalSkips ?? 0) + 1 : (user.totalSkips ?? 0),
     consecutiveWrongs: previousConsecutiveWrongs,
     result,
