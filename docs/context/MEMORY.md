@@ -6,6 +6,20 @@
 
 ## Session History
 
+### [2026-05-28] Session 21: Achievements Guest Warning Prompt
+- **Task/Epic Status:**
+  - **Task:** Achievements Guest Warning Prompt
+  - **Gate 3 (QA):** Passed — vitest 150/150, tsc clean, next build clean, 100% test coverage on warning prompt client implementation.
+  - **Status:** **DONE** — staged and committed
+- **What Was Implemented:**
+  - `src/app/achievements/AchievementsClient.tsx` (MODIFIED) — Added an elegant, premium neobrutalist warning banner/prompt shown when the user is playing as a guest (`userId` is empty). The banner contains the exact warning text and a high-impact 'Simpan Progres' CTA button connecting the guest account to Google.
+  - `src/app/achievements/AchievementsClient.test.tsx` (NEW) — Unit test suite checking the presence of the warning prompt, the "Simpan Progres" button, and correct rendering for authenticated users without hydration mismatch.
+- **Discoveries & Technical Insights:**
+  - Server Component read paths (e.g. `getSession()`) must remain pure reads; eager cookie mutations like `deleteSession()` inside these components break Next.js App Router rules.
+  - Mocking the server actions (`pinBadge`, `unpinBadge`) inside Achievements client tests prevents Vitest from executing MongoDB import paths, eliminating the need to set up DB credentials for client-only UI tests.
+- **Patterns (What Worked Well):**
+  - Reusing standard global location redirect routines and aligning the design layout with other existing guest warning templates (e.g. in Profile) keeps the user experience highly consistent.
+
 ### [2026-05-28] Session 20: E06 — Achievement System
 - **Task/Epic Status:**
   - **Epic:** E06 — Achievement System
