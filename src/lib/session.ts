@@ -52,7 +52,13 @@ export async function getSession(): Promise<{ userId: string } | null> {
     return null
   }
 
-  return { userId: session.userId._id.toString() }
+  // Guard: populate returns null if the referenced User doc was deleted (orphaned session)
+  if (!session.userId) {
+    await deleteSession()
+    return null
+  }
+
+  return { userId: (session.userId as { _id: { toString(): string } })._id.toString() }
 }
 
 /**

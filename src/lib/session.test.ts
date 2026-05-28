@@ -123,6 +123,26 @@ describe('Session Utilities', () => {
 
       expect(result).toEqual({ userId: 'user-789' })
     })
+
+    it('returns null and clears session if populated userId is null (orphaned session)', async () => {
+      mockCookiesStore.get.mockReturnValue({ value: 'token-abc' })
+
+      const futureDate = new Date()
+      futureDate.setDate(futureDate.getDate() + 1)
+
+      vi.mocked(Session.findOne).mockReturnValue({
+        populate: vi.fn().mockResolvedValue({
+          userId: null,
+          expiresAt: futureDate,
+        }),
+      } as any)
+
+      const result = await getSession()
+
+      expect(result).toBeNull()
+      expect(Session.deleteOne).toHaveBeenCalledWith({ sessionToken: 'token-abc' })
+      expect(mockCookiesStore.delete).toHaveBeenCalledWith('gabutin_session')
+    })
   })
 
   describe('deleteSession', () => {
