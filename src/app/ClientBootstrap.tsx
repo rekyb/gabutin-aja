@@ -43,18 +43,11 @@ export function ClientBootstrap() {
       if (!uid) {
         const newId = generateUniqueUserId()
         setUniqueUserId(newId)
-        if (pathname !== '/welcome') {
-          router.replace('/welcome')
-        }
         return
       }
 
-      // Returning user on /welcome: redirect to /feed if guest or registered
+      // Returning user on /welcome: redirect to /feed if fully registered in DB
       if (pathname === '/welcome') {
-        if (isGuestOnly()) {
-          router.replace('/feed')
-          return
-        }
         const user = await getUserByUniqueId(uid)
         if (user) {
           router.replace('/feed')

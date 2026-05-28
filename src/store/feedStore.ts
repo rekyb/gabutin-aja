@@ -1,9 +1,6 @@
 import { create } from 'zustand'
 import { getNextCard } from '@/app/actions/feed'
-import { submitAnswer } from '@/app/actions/answer'
-import type { CardDoc, SubmitAnswerResponse, AchievementDef } from '@/types'
-
-export type FeedPhase = 'loading' | 'fact' | 'question' | 'result'
+import type { CardDoc, AchievementDef } from '@/types'
 
 function readUserId(): string {
   try {
@@ -30,21 +27,15 @@ function checkReEngagement(): boolean {
 
 interface FeedStore {
   userId: string
-  phase: FeedPhase
-  card: CardDoc | null
-  response: SubmitAnswerResponse | null
+  cards: CardDoc[]
   achievements: AchievementDef[]
   showReEngagement: boolean
-  cardHistory: CardDoc[]
-  historyIndex: number
-  wasTimeout: boolean
+  isLoadingMore: boolean
 
   init: () => void
-  loadCard: (uid: string) => Promise<void>
-  goToPrev: () => void
-  goToNext: () => Promise<void>
-  answerCard: (selectedIndex: number | null, isTimeout?: boolean) => Promise<void>
-  setPhase: (phase: FeedPhase) => void
+  loadInitialCards: () => Promise<void>
+  loadMoreCards: () => Promise<void>
+  appendAchievements: (newAchievements: AchievementDef[]) => void
   dismissAchievement: (index: number) => void
   dismissReEngagement: () => void
   reset: () => void
@@ -52,91 +43,77 @@ interface FeedStore {
 
 export const useFeedStore = create<FeedStore>((set, get) => ({
   userId: '',
-  phase: 'loading',
-  card: null,
-  response: null,
+  cards: [],
   achievements: [],
   showReEngagement: false,
-  cardHistory: [],
-  historyIndex: -1,
-  wasTimeout: false,
+  isLoadingMore: false,
 
   init: () => {
     const uid = readUserId()
     set({ userId: uid })
-    get().loadCard(uid).catch(() => {})
+    get().loadInitialCards().catch(() => {})
   },
 
-  loadCard: async (uid) => {
+  loadInitialCards: async () => {
     if (checkReEngagement()) {
       set({ showReEngagement: true })
       return
     }
-    set({ phase: 'loading' })
+    set({ isLoadingMore: true })
+    const uid = get().userId || readUserId()
     try {
-      const next = await getNextCard(uid)
-      if (next) {
-        set((s) => ({
-          card: next,
-          cardHistory: [...s.cardHistory, next],
-          historyIndex: s.cardHistory.length,
-          phase: 'fact',
-          wasTimeout: false,
-        }))
+      // Load first 3 cards to pre-populate feed
+      const list: CardDoc[] = []
+      for (let i = 0; i < 3; i++) {
+        const next = await getNextCard(uid)
+        if (next) {
+          // Prevent adjacent exact duplicates if any
+          if (list.length === 0 || list[list.length - 1]._id !== next._id) {
+            list.push(next)
+          }
+        }
       }
-    } catch {}
-  },
-
-  goToPrev: () => {
-    const { historyIndex, cardHistory } = get()
-    if (historyIndex <= 0) return
-    const newIndex = historyIndex - 1
-    set({ historyIndex: newIndex, card: cardHistory[newIndex], response: null, phase: 'fact', wasTimeout: false })
-  },
-
-  goToNext: async () => {
-    const { historyIndex, cardHistory, userId } = get()
-    if (historyIndex < cardHistory.length - 1) {
-      const newIndex = historyIndex + 1
-      set({ historyIndex: newIndex, card: cardHistory[newIndex], response: null, phase: 'fact', wasTimeout: false })
-    } else {
-      set({ response: null })
-      await get().loadCard(userId)
+      set({ cards: list })
+    } catch (err) {
+      console.error('[feedStore] failed loading initial cards:', err)
+    } finally {
+      set({ isLoadingMore: false })
     }
   },
 
-  answerCard: async (selectedIndex, isTimeout = false) => {
-    const { card, userId } = get()
-    if (!card || !userId) return
-    set({ phase: 'loading', wasTimeout: isTimeout })
+  loadMoreCards: async () => {
+    const { isLoadingMore, cards, userId } = get()
+    if (isLoadingMore) return
+    set({ isLoadingMore: true })
     try {
-      const res = await submitAnswer(userId, card._id, selectedIndex)
-      set((s) => ({
-        response: res,
-        phase: 'result',
-        achievements: res.newAchievements.length > 0
-          ? [...s.achievements, ...res.newAchievements]
-          : s.achievements,
-      }))
-    } catch {}
+      const uid = userId || readUserId()
+      const next = await getNextCard(uid)
+      if (next) {
+        set({ cards: [...cards, next] })
+      }
+    } catch (err) {
+      console.error('[feedStore] failed loading more cards:', err)
+    } finally {
+      set({ isLoadingMore: false })
+    }
   },
 
-  setPhase: (phase) => set({ phase }),
+  appendAchievements: (newAchievements) => {
+    if (!newAchievements || newAchievements.length === 0) return
+    set((s) => ({ achievements: [...s.achievements, ...newAchievements] }))
+  },
 
   dismissAchievement: (index) =>
     set((s) => ({ achievements: s.achievements.filter((_, i) => i !== index) })),
 
   dismissReEngagement: () => set({ showReEngagement: false }),
 
-  reset: () => set({
-    userId: '',
-    phase: 'loading',
-    card: null,
-    response: null,
-    achievements: [],
-    showReEngagement: false,
-    cardHistory: [],
-    historyIndex: -1,
-    wasTimeout: false,
-  }),
+  reset: () =>
+    set({
+      userId: '',
+      cards: [],
+      achievements: [],
+      showReEngagement: false,
+      isLoadingMore: false,
+    }),
 }))

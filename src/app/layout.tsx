@@ -4,6 +4,8 @@ import { AppBar } from '@/components/AppBar'
 import { BottomNav } from '@/components/BottomNav'
 import { SideNav } from '@/components/SideNav'
 import { Toast } from '@/components/Toast'
+import { LoginModal } from '@/components/LoginModal'
+import { DesktopHeader } from '@/components/DesktopHeader'
 import { Providers } from './providers'
 import { ClientBootstrap } from './ClientBootstrap'
 import './globals.css'
@@ -35,6 +37,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="antialiased bg-background text-foreground">
         <Providers>
           <ClientBootstrap />
+          <DesktopHeader />
           <AppBar className="lg:hidden" />
           <div className="flex min-h-screen">
             <SideNav className="hidden lg:flex" />
@@ -44,6 +47,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </div>
           <BottomNav className="lg:hidden" />
           <Toast />
+          <LoginModal />
         </Providers>
       </body>
     </html>
