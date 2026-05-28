@@ -18,7 +18,7 @@
 | E03 | [Card Generation Pipeline](./epic/e03-card-generation-pipeline.md) | [DONE] | E01 | E02, E05, E09 |
 | E04 | [Feed & Card Lifecycle](./epic/e04-feed-card-lifecycle.md) | [DONE] | E01, E02, E03 | E06, E07, E08, E09 |
 | E04-01 | UX Revamp (Feed & Card) | [DONE] | E04 | E05, E06, E07, E09 |
-| E05 | [Scoring Engine](./epic/e05-scoring-engine.md) | [ ] | E01 | E02, E03, E09 |
+| E05 | [Scoring Engine](./epic/e05-scoring-engine.md) | [DONE] | E01 | E02, E03, E09 |
 | E06 | [Achievement System](./epic/e06-achievement-system.md) | [ ] | E01, E02, E05 | E07, E08, E09 |
 | E07 | [Adaptive Feed Algorithm](./epic/e07-adaptive-feed-algorithm.md) | [ ] | E01, E02, E03, E05 | E06, E08, E09 |
 | E08 | [Profile Page](./epic/e08-profile-page.md) | [ ] | E01, E02, E05, E06 | E09 |
@@ -38,7 +38,7 @@ Wave 1 (no deps):
 Wave 2 (unblock most tracks after E01):
   E02 — Guest Identity & Onboarding                [DONE]
   E03 — Card Generation Pipeline                   [DONE]
-  E05 — Scoring Engine
+  E05 — Scoring Engine                             [DONE]
 
 Wave 3 (feeds need data layer ready):
   E04    — Feed & Card Lifecycle                   [DONE]
@@ -277,7 +277,7 @@ src/
         logout/route.ts          # Session teardown
     actions/
       user.ts                    # createUser, getUserByUniqueId, completeOnboarding, updateUserThemes
-      answer.ts                  # submitAnswer (stub → real in E05)
+      answer.ts                  # submitAnswer — real scoring engine (E05 DONE)
       feed.ts                    # getNextCard (stub → real in E07)
       achievements.ts            # E06 — not yet implemented
       profile.ts                 # E08 — not yet implemented
@@ -326,6 +326,9 @@ src/
       wikipedia.ts              # Wikipedia REST API client
       gemini.ts                 # Gemini MCQ generator
       theme-keywords.ts         # Theme → search keyword map
+    scoring/
+      formulas.ts               # Pure XP/points/level formula functions (E05)
+      formulas.test.ts          # 32 assertions, 100% coverage
   store/
     feedStore.ts                # Zustand — feed phase, card history, nav
     toastStore.ts               # Zustand — global toast message

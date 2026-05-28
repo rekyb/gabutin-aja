@@ -6,6 +6,27 @@
 
 ## Session History
 
+### [2026-05-28] Session 19: E05 — Scoring Engine
+- **Task/Epic Status:**
+  - **Epic:** E05 — Scoring Engine
+  - **Gate 3 (QA):** Passed — vitest 107/107, tsc clean, coverage ≥80%
+  - **Status:** **DONE** — PR #11 merged to main
+- **What Was Implemented:**
+  - `src/lib/scoring/formulas.ts` (NEW) — pure formula functions: `BASE_XP=2`, `getStreakBonus`, `calculateXP`, `calculatePointsDelta`, `xpRequiredForLevel`, `computeLevel`, `getLevelTitle`
+  - `src/lib/scoring/formulas.test.ts` (NEW) — 32 assertions, 100% coverage on all formula edge cases
+  - `src/app/actions/answer.ts` — replaced stub with real `submitAnswer`: fetches User by `uniqueUserId`, Card by ObjectId; determines `result`; first-attempt XP guard (`Answer.exists`); floors ThemeScore points at 0; updates User (xp, level, streak, totalAnswers, totalSkips); creates `Answer` record; guests (no DB user) get computed response without DB writes
+  - `src/components/Feed/FeedCard.tsx` — added `buildShuffledOrder` (seeded Fisher-Yates via `card._id`); shuffle computed once in `useState` initializer; both mobile and desktop MCQ option lists render `shuffledOrder.map`; `handleSubmit` remaps `shuffledIndex → originalIndex` before calling `submitAnswer`
+- **Discoveries & Technical Insights:**
+  - The linter auto-added an `isMock` guard to `answer.ts` for non-ObjectId cardIds (`mock-card-1`, `mock-card-2`) — the feed stub still serves these until E07 wires real DB card fetching. The guard preserves valid scoring responses for real users while the feed stubs are in place.
+  - `CardQuestion.tsx` was deleted in E04-01; the Fisher-Yates shuffle spec target moved to `FeedCard.tsx` inline. Both mobile and desktop question phases share a single `shuffledOrder` state computed at mount.
+  - Using `useState(() => buildShuffledOrder(...))` (initializer function) computes the shuffle synchronously on first render — no empty array flash before the shuffle is applied.
+- **Patterns (What Worked Well):**
+  - Pure formula functions with zero dependencies make 100% test coverage trivial and give a fast feedback loop before touching the Server Action.
+  - Remapping shuffled index → original index in the client before calling `submitAnswer` keeps the Server Action unaware of shuffle order — no signature change needed.
+- **Anti-Patterns to Avoid:**
+  - Do NOT use `useEffect` to compute the shuffle — it fires after paint and causes a visible re-render. Use `useState` initializer instead.
+  - Do NOT pass shuffled index directly to `submitAnswer` without remapping — scoring would break for non-zero `correctIndex` values.
+
 ### [2026-05-28] Session 18: Resolve SonarQube Code Smells
 - **Task/Epic Status:**
   - **Task:** Resolve SonarQube unexpected negated conditions, nested ternary, and charCodeAt code smells.
