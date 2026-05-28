@@ -34,7 +34,7 @@ describe('AchievementsClient', () => {
   it('renders achievements page correctly for authenticated user', () => {
     render(<AchievementsClient achievements={[]} userId="user-123" stats={mockStats} />)
     
-    expect(screen.getByText('Achievements')).toBeInTheDocument()
+    expect(screen.getByText('Flexing')).toBeInTheDocument()
     expect(screen.queryByText(/Lo main sebagai/i)).not.toBeInTheDocument()
   })
 

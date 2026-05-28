@@ -111,10 +111,10 @@ export function AchievementsClient({ achievements, userId, stats }: Achievements
       {/* Page Header */}
       <div className="space-y-1">
         <h1 className="font-sans font-black text-3xl uppercase tracking-wide text-foreground">
-          Achievements
+          Flexing
         </h1>
         <p className="font-mono text-sm text-muted-foreground">
-          {achievements.length}/17 badge diraih
+          {achievements.length}/17 lencana diraih
           {showcasedCount > 0 && ` · ${showcasedCount}/3 dipasang`}
         </p>
       </div>
