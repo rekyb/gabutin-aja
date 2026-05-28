@@ -6,6 +6,32 @@
 
 ## Session History
 
+### [2026-05-28] Session 20: E06 — Achievement System
+- **Task/Epic Status:**
+  - **Epic:** E06 — Achievement System
+  - **Gate 3 (QA):** Passed — vitest 147/147, tsc clean, next build clean, coverage 99.82%
+  - **Status:** **DONE** — branch `feat/e06-achievement-system` pushed, PR open
+- **What Was Implemented:**
+  - `src/lib/achievements/definitions.ts` (NEW) — 17 `AchievementDef` entries with keys, icons, titles, rarity, and descriptions (exact spec from epic doc)
+  - `src/lib/achievements/check.ts` (NEW) — `checkAchievements(ctx)`: fetches earned keys from DB, evaluates all 17 conditions via `evaluateCondition` switch, inserts newly earned docs with `insertMany({ ordered: false })`, swallows duplicate-key errors, returns newly earned `AchievementDef[]`
+  - `src/lib/achievements/check.test.ts` (NEW) — 40 assertions, 100% branch coverage: true/false branch per condition + idempotency + insertMany error swallow
+  - `src/app/actions/answer.ts` (MODIFIED) — extended `LeanUser` to include `consecutiveWrongs`/`totalAnswers`/`totalSkips`; reads `previousConsecutiveWrongs` before update; increments `consecutiveWrongs` on wrong, resets to 0 on correct/skip; calls `checkAchievements` after DB writes with full `AchievementContext`; returns real `newAchievements`
+  - `src/app/actions/achievements.ts` (NEW) — `getUserAchievements` (lean find by `_id`), `pinBadge` (3-slot cap, oldest-earnedAt replacement), `unpinBadge` (clear isShowcased + showcasePosition)
+  - `src/app/achievements/page.tsx` (MODIFIED) — async Server Component; uses `getSession()` → `User.findById` (matches `onboarding/page.tsx` pattern) to get `uniqueUserId`; fetches achievements + themeScores in parallel; passes `stats` prop to client
+  - `src/app/achievements/AchievementsClient.tsx` (NEW) — 17-slot badge grid; earned: full rarity border + color + pin/unpin buttons; locked: `opacity-50 grayscale` + progress hint via `getProgressHint()`; uses `useTransition` for optimistic pin/unpin loading state
+  - `src/lib/design-tokens.ts` (MODIFIED) — added `RARITY_BORDER_COLORS` for badge border styling
+- **Discoveries & Technical Insights:**
+  - `vi.mock` factory is hoisted to the top of the file before any `const` declarations. Variables declared at module scope (e.g., `const mockFind = vi.fn()`) are NOT yet initialized when the factory runs — causes `ReferenceError: Cannot access before initialization`. Fix: use `vi.fn()` inline in the factory, then access via `vi.mocked(ImportedModule.method)` in tests.
+  - `getSession()` returns `{ userId }` which is the MongoDB `_id` string, NOT `uniqueUserId`. To get `uniqueUserId`, call `User.findById(session.userId)` and read `.uniqueUserId` from the doc. Consistent with `onboarding/page.tsx` pattern.
+  - `insertMany({ ordered: false })` allows partial success — Mongo writes all non-duplicate docs even if some hit the unique index. Swallowing the thrown error in a try/catch means the function still returns newly-earned achievements correctly (already filtered before insert).
+  - `consecutiveWrongs` must be captured as `previousConsecutiveWrongs` BEFORE the DB update. The comeback achievement (`consecutiveWrongs >= 3 && result === 'correct'`) uses the pre-update value — if you read it after reset, it's always 0.
+- **Patterns (What Worked Well):**
+  - The `evaluateCondition(key, ctx)` switch keeps all 17 condition branches in one pure function — trivially testable and easy to extend.
+  - `useTransition` + `router.refresh()` is the right pattern for Server Action mutations in Next.js App Router client components — no manual state management needed.
+- **Anti-Patterns to Avoid:**
+  - Do NOT reference module-scope variables inside `vi.mock` factories — they're hoisted before those variables are initialized. Always use inline `vi.fn()` in the factory.
+  - Do NOT use `getSession().userId` as `uniqueUserId` — it's the MongoDB ObjectId. Always look up the User doc to get `uniqueUserId`.
+
 ### [2026-05-28] Session 19: E05 — Scoring Engine
 - **Task/Epic Status:**
   - **Epic:** E05 — Scoring Engine
