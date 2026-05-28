@@ -7,8 +7,17 @@ import { Answer } from '@/db/models/Answer'
 import { ThemeScore } from '@/db/models/ThemeScore'
 import type { AnswerResult, SubmitAnswerResponse } from '@/types'
 import { calculateXP, calculatePointsDelta, computeLevel } from '@/lib/scoring/formulas'
+import { checkAchievements } from '@/lib/achievements/check'
 
-type LeanUser = { _id: mongoose.Types.ObjectId; xp: number; level: number; currentStreak: number }
+type LeanUser = {
+  _id: mongoose.Types.ObjectId
+  xp: number
+  level: number
+  currentStreak: number
+  consecutiveWrongs: number
+  totalAnswers: number
+  totalSkips: number
+}
 type LeanCard = { _id: mongoose.Types.ObjectId | string; theme: string; correctIndex: number }
 type LeanThemeScore = { points: number }
 
@@ -65,6 +74,9 @@ export async function submitAnswer(
     return { result, pointsDelta, xpDelta: 0, newStreak: 0, newLevel: 1, leveledUp: false, newAchievements: [] }
   }
 
+  // Read consecutiveWrongs BEFORE updating (needed for comeback achievement checks)
+  const previousConsecutiveWrongs = user.consecutiveWrongs
+
   // First-attempt XP guard: only award XP on the first answer per card
   const alreadyAnswered = isMock ? false : await Answer.exists({ userId: user._id, cardId: card._id })
   const xpDelta = alreadyAnswered ? 0 : calculateXP(result, user.currentStreak)
@@ -79,8 +91,13 @@ export async function submitAnswer(
   const currentPoints = themeScore?.points ?? 0
   const flooredDelta = Math.max(0, currentPoints + pointsDelta) - currentPoints
 
+  // Build $inc and $set update objects
   const incFields: Record<string, number> = { xp: xpDelta, totalAnswers: 1 }
   if (result === 'skip') incFields.totalSkips = 1
+  if (result === 'wrong') incFields.consecutiveWrongs = 1
+
+  const setFields: Record<string, number | string> = { currentStreak: newStreak, level: newLevel }
+  if (result !== 'wrong') setFields.consecutiveWrongs = 0
 
   await ThemeScore.updateOne(
     { userId: user._id, theme: card.theme },
@@ -89,12 +106,27 @@ export async function submitAnswer(
   )
   await User.updateOne(
     { _id: user._id },
-    { $inc: incFields, $set: { currentStreak: newStreak, level: newLevel } },
+    { $inc: incFields, $set: setFields },
   )
 
   if (!isMock) {
     await Answer.create({ userId: user._id, cardId: card._id, theme: card.theme, result, pointsDelta, xpDelta })
   }
 
-  return { result, pointsDelta, xpDelta, newStreak, newLevel, leveledUp, newAchievements: [] }
+  // Fetch updated theme score for achievement context
+  const updatedThemeScore = await ThemeScore.findOne({ userId: user._id, theme: card.theme }).lean<LeanThemeScore>()
+  const updatedPoints = updatedThemeScore?.points ?? currentPoints + flooredDelta
+
+  const newAchievements = await checkAchievements({
+    userId: (user._id as mongoose.Types.ObjectId).toString(),
+    totalAnswers: user.totalAnswers + 1,
+    currentStreak: newStreak,
+    level: newLevel,
+    themeScores: { [card.theme]: updatedPoints },
+    totalSkips: result === 'skip' ? user.totalSkips + 1 : user.totalSkips,
+    consecutiveWrongs: previousConsecutiveWrongs,
+    result,
+  })
+
+  return { result, pointsDelta, xpDelta, newStreak, newLevel, leveledUp, newAchievements }
 }

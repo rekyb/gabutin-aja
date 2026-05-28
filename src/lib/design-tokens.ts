@@ -22,6 +22,14 @@ export const RARITY_COLORS: Record<string, string> = {
   Mythic: 'text-yellow-400',
 }
 
+// Achievement rarity border colors
+export const RARITY_BORDER_COLORS: Record<string, string> = {
+  Common: 'border-gray-400',
+  Rare: 'border-blue-400',
+  Epic: 'border-purple-400',
+  Mythic: 'border-yellow-400',
+}
+
 // XP bar
 export const XP_BAR_TRACK = 'h-2 bg-muted border border-border w-full' as const
 export const XP_BAR_FILL = 'h-full bg-primary transition-[width] duration-500' as const
