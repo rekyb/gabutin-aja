@@ -1,40 +1,11 @@
 'use client'
 import { useEffect, type FC } from 'react'
-import { TOAST_POSITION } from '@/lib/design-tokens'
+import { TOAST_POSITION, VIBRANT_RARITY_THEMES } from '@/lib/design-tokens'
 import type { AchievementDef } from '@/types'
 
 export interface AchievementToastProps {
   achievement: AchievementDef
   onDismiss?: () => void
-}
-
-interface RarityTheme {
-  labelColor: string
-  borderColor: string
-  shadowStyle: string
-}
-
-const RARITY_THEMES: Record<string, RarityTheme> = {
-  Common: {
-    labelColor: 'text-[#94a3b8]',
-    borderColor: 'border-[#94a3b8]',
-    shadowStyle: 'shadow-[6px_6px_0px_0px_#94a3b8]',
-  },
-  Rare: {
-    labelColor: 'text-[#38bdf8]',
-    borderColor: 'border-[#38bdf8]',
-    shadowStyle: 'shadow-[6px_6px_0px_0px_#38bdf8]',
-  },
-  Epic: {
-    labelColor: 'text-[#c084fc]',
-    borderColor: 'border-[#c084fc]',
-    shadowStyle: 'shadow-[6px_6px_0px_0px_#c084fc]',
-  },
-  Mythic: {
-    labelColor: 'text-[#f97316]',
-    borderColor: 'border-[#f97316]',
-    shadowStyle: 'shadow-[6px_6px_0px_0px_#f97316]',
-  },
 }
 
 export const AchievementToast: FC<AchievementToastProps> = ({ achievement, onDismiss }) => {
@@ -43,7 +14,7 @@ export const AchievementToast: FC<AchievementToastProps> = ({ achievement, onDis
     return () => clearTimeout(timer)
   }, [onDismiss])
 
-  const theme = RARITY_THEMES[achievement.rarity] ?? RARITY_THEMES.Common
+  const theme = VIBRANT_RARITY_THEMES[achievement.rarity] ?? VIBRANT_RARITY_THEMES.Common
 
   return (
     <div

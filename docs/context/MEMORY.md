@@ -8,14 +8,15 @@
 
 ### [2026-05-28] Session 21: Achievements Guest Warning Prompt
 - **Task/Epic Status:**
-  - **Task:** Achievements Guest Warning Prompt & Redesigned Toast Notification
+  - **Task:** Achievements Guest Warning Prompt, Redesigned Toast Notification & Color Registration
   - **Gate 3 (QA):** Passed — vitest 150/150, tsc clean, next build clean, 100% test coverage on warning prompt and toast redesign.
   - **Status:** **DONE** — staged and committed
 - **What Was Implemented:**
   - `src/app/achievements/AchievementsClient.tsx` (MODIFIED) — Added an elegant, premium neobrutalist warning banner/prompt shown when the user is playing as a guest (`userId` is empty). The banner contains the exact warning text and a high-impact 'Simpan Progres' CTA button connecting the guest account to Google.
   - `src/app/achievements/AchievementsClient.test.tsx` (NEW) — Unit test suite checking the presence of the warning prompt, the "Simpan Progres" button, and correct rendering for authenticated users without hydration mismatch.
   - `src/app/actions/answer.ts` (MODIFIED) — Implemented safe coalescing fallbacks (`?? 0`) on `totalAnswers`, `totalSkips`, and `consecutiveWrongs` inside the scoring action. Extended the guest handler: if a new guest plays the feed directly (without finishing onboarding `/welcome`), `submitAnswer` automatically initializes and inserts a guest `User` record in MongoDB, enabling full progression and immediate achievement yielding on the feed.
-  - `src/components/AchievementToast/index.tsx` (MODIFIED) — Redesigned the toast component to be extremely vibrant and match the dark, high-vibe neobrutalist mockup: features a dark background, bold white title, light gray description, large emojis, and dynamic borders/shadows matching the achievement's rarity tier (Common: Slate, Rare: Neon Blue, Epic: Purple, Mythic: Orange).
+  - `src/components/AchievementToast/index.tsx` (MODIFIED) — Redesigned the toast component to be extremely vibrant and match the dark, high-vibe neobrutalist mockup: features a dark background, bold white title, light gray description, large emojis, and dynamic borders/shadows matching the achievement's rarity tier. Imported styles directly from `design-tokens.ts`.
+  - `src/lib/design-tokens.ts` (MODIFIED) — Centralized the new vibrant rarity hexes, text classes, and border styles in `RARITY_COLORS` and `RARITY_BORDER_COLORS` so the main `/achievements` badges visually match the toast presentation. Centralized and exported the `VIBRANT_RARITY_THEMES` dictionary.
   - `src/app/globals.css` (MODIFIED) — Added slideUp keyframe animations and `.animate-slide-up` utility class with polished cubic-bezier easing to dynamically slide and fade toast notifications in from the bottom.
 - **Discoveries & Technical Insights:**
   - Server Component read paths (e.g. `getSession()`) must remain pure reads; eager cookie mutations like `deleteSession()` inside these components break Next.js App Router rules.
@@ -25,6 +26,7 @@
   - Custom animations sit cleanly inside the global stylesheet and can be driven by a utility class to keep markup clean and performant.
 - **Patterns (What Worked Well):**
   - Reusing standard global location redirect routines and aligning the design layout with other existing guest warning templates (e.g. in Profile) keeps the user experience highly consistent.
+  - Centralizing and exporting rarity themes inside `design-tokens.ts` ensures DRY consistency across both feed components (Achievement Toast) and main dashboard grids (Achievements Page).
 
 ### [2026-05-28] Session 20: E06 — Achievement System
 - **Task/Epic Status:**
