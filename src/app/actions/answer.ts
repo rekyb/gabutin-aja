@@ -72,7 +72,7 @@ export async function submitAnswer(
 
   // Guest (no DB user record) — automatically create guest record so their progress/achievements are tracked!
   if (!user) {
-    const defaultDisplayName = `Tamu-${userId.slice(-4)}`
+    const defaultDisplayName = 'Tamu'
     const defaultThemes = ['sains', 'pop_culture', 'sejarah_indonesia']
     const { userId: newDbUserId } = await createUser(defaultDisplayName, defaultThemes as any[], userId)
     user = await User.findById(newDbUserId).lean<LeanUser>()
