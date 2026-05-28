@@ -24,14 +24,7 @@ export async function submitAnswer(
 
   const isMock = !mongoose.Types.ObjectId.isValid(cardId)
 
-  if (!isMock) {
-    const [dbUser, dbCard] = await Promise.all([
-      User.findOne({ uniqueUserId: userId }).lean<LeanUser>(),
-      Card.findById(cardId).lean<LeanCard>(),
-    ])
-    user = dbUser
-    card = dbCard
-  } else {
+  if (isMock) {
     user = await User.findOne({ uniqueUserId: userId }).lean<LeanUser>()
     const mockCards = [
       { _id: 'mock-card-1', theme: 'sains', correctIndex: 0 },
@@ -45,16 +38,25 @@ export async function submitAnswer(
         correctIndex: found.correctIndex,
       }
     }
+  } else {
+    const [dbUser, dbCard] = await Promise.all([
+      User.findOne({ uniqueUserId: userId }).lean<LeanUser>(),
+      Card.findById(cardId).lean<LeanCard>(),
+    ])
+    user = dbUser
+    card = dbCard
   }
 
   if (!card) throw new Error(`Card not found: ${cardId}`)
 
-  const result: AnswerResult =
-    selectedIndex === null
-      ? 'skip'
-      : selectedIndex === card.correctIndex
-        ? 'correct'
-        : 'wrong'
+  let result: AnswerResult
+  if (selectedIndex === null) {
+    result = 'skip'
+  } else if (selectedIndex === card.correctIndex) {
+    result = 'correct'
+  } else {
+    result = 'wrong'
+  }
 
   const pointsDelta = calculatePointsDelta(result)
 

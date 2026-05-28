@@ -6,6 +6,20 @@
 
 ## Session History
 
+### [2026-05-28] Session 18: Resolve SonarQube Code Smells
+- **Task/Epic Status:**
+  - **Task:** Resolve SonarQube unexpected negated conditions, nested ternary, and charCodeAt code smells.
+  - **Gate 3 (QA):** Passed — vitest 107/107 passing, next build success, zero compilation errors.
+  - **Status:** **DONE**
+- **What Was Implemented:**
+  - `src/app/actions/answer.ts` — Flipped the negated condition `!isMock` to `isMock` in the core answer handler if-else block. Extracted the nested ternary assignment for `result` into a clean, explicit `if-else-if` statement.
+  - `src/components/Feed/FeedCard.tsx` — Updated `buildShuffledOrder` to use modern `codePointAt(0)` with a fallback instead of legacy `charCodeAt(0)`. Converted the negated ternary conditional mapping in `handleSubmit` to a positive check.
+- **Discoveries & Technical Insights:**
+  - Flipped boolean conditions and standard control structures rather than nested ternaries dramatically improve long-term codebase legibility and strictly satisfy SonarQube quality gates.
+  - Using `codePointAt` is a safer and robust replacement for `charCodeAt`, ensuring full coverage of extended character sets and high code compliance.
+- **Patterns (What Worked Well):**
+  - Promptly fixing code smells and running strict test suits and production build validation immediately validates structural changes.
+
 ### [2026-05-28] Session 17: Resolve Unit Test Coverage Threshold Failures
 - **Task/Epic Status:**
   - **Task:** Resolve function coverage deficit and satisfy 80% coverage threshold.

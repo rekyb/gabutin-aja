@@ -51,7 +51,7 @@ const themeDisplayNames: Record<string, string> = {
 
 function buildShuffledOrder(cardId: string, optionCount: number): number[] {
   const arr = Array.from({ length: optionCount }, (_, i) => i)
-  let seed = [...cardId].reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) % 1_000_000_007, 0)
+  let seed = [...cardId].reduce((acc, c) => (acc * 31 + (c.codePointAt(0) ?? 0)) % 1_000_000_007, 0)
   for (let i = optionCount - 1; i > 0; i--) {
     seed = (seed * 1664525 + 1013904223) >>> 0
     const j = seed % (i + 1)
@@ -130,7 +130,7 @@ export const FeedCard: FC<FeedCardProps> = ({ card }) => {
     if (!userId || isSubmitting) return
     setIsSubmitting(true)
     // Remap shuffled index back to the original option index for server-side scoring
-    const originalIndex = shuffledIndex !== null ? shuffledOrder[shuffledIndex] : null
+    const originalIndex = shuffledIndex === null ? null : shuffledOrder[shuffledIndex]
     try {
       const res = await submitAnswer(userId, card._id, originalIndex)
       setStreak(res.newStreak)

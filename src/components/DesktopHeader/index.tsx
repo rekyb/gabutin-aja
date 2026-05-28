@@ -28,12 +28,14 @@ export const DesktopHeader: FC = () => {
 
   return (
     <div className="hidden lg:flex fixed top-4 right-6 z-30 items-center gap-3">
-      <button
-        onClick={(e) => e.preventDefault()}
+      <a
+        href="https://forms.gle/oPfqjNhDGwbavjqd6"
+        target="_blank"
+        rel="noopener noreferrer"
         className="border-2 border-border font-mono font-bold text-xs px-3 py-1.5 bg-muted text-foreground hover:bg-card transition-colors cursor-pointer"
       >
         Saran dong
-      </button>
+      </a>
 
       {!isOnboarded && (
         <button

@@ -45,12 +45,14 @@ export const AppBar: FC<AppBarProps> = ({ className }) => {
 
       {/* Right: Actions Group */}
       <div className="flex items-center gap-2">
-        <button
-          onClick={(e) => e.preventDefault()}
+        <a
+          href="https://forms.gle/oPfqjNhDGwbavjqd6"
+          target="_blank"
+          rel="noopener noreferrer"
           className="border-2 border-border font-mono font-bold text-[10px] sm:text-xs px-2.5 py-1 bg-muted text-foreground hover:bg-card transition-colors cursor-pointer"
         >
           Saran dong
-        </button>
+        </a>
 
         {!isOnboarded && (
           <button
