@@ -19,8 +19,8 @@
 | E04 | [Feed & Card Lifecycle](./epic/e04-feed-card-lifecycle.md) | [DONE] | E01, E02, E03 | E06, E07, E08, E09 |
 | E04-01 | UX Revamp (Feed & Card) | [DONE] | E04 | E05, E06, E07, E09 |
 | E05 | [Scoring Engine](./epic/e05-scoring-engine.md) | [DONE] | E01 | E02, E03, E09 |
-| E06 | [Achievement System](./epic/e06-achievement-system.md) | [ ] | E01, E02, E05 | E07, E08, E09 |
-| E07 | [Adaptive Feed Algorithm](./epic/e07-adaptive-feed-algorithm.md) | [ ] | E01, E02, E03, E05 | E06, E08, E09 |
+| E06 | [Achievement System](./epic/e06-achievement-system.md) | [DONE] | E01, E02, E05 | E07, E08, E09 |
+| E07 | [Adaptive Feed Algorithm](./epic/e07-adaptive-feed-algorithm.md) | [ONGOING] | E01, E02, E03, E05 | E06, E08, E09 |
 | E08 | [Profile Page](./epic/e08-profile-page.md) | [ ] | E01, E02, E05, E06 | E09 |
 | E09 | [PWA & Analytics](./epic/e09-pwa-analytics.md) | [ ] | E01, E02 | E06, E07, E08 |
 | E10 | [Deployment](./epic/e10-deployment.md) | [ ] | E01–E09 all complete | — |
