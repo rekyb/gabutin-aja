@@ -31,6 +31,26 @@ interface LeanUser {
   themes: string[]
 }
 
+function toCardDoc(card: LeanCard): CardDoc {
+  return {
+    _id: card._id.toString(),
+    theme: card.theme,
+    fact: card.fact,
+    sourceUrl: card.sourceUrl,
+    question: card.question,
+    options: card.options,
+    correctIndex: card.correctIndex,
+    explanation: card.explanation,
+  }
+}
+
+async function fetchRandomCard(): Promise<LeanCard | null> {
+  const count = await Card.countDocuments({ status: 'approved' })
+  if (!count) return null
+  const skip = Math.floor(Math.random() * count)
+  return Card.findOne({ status: 'approved' }).skip(skip).lean<LeanCard>()
+}
+
 async function fetchUnseenCard(
   theme: string,
   excludeIds: mongoose.Types.ObjectId[]
@@ -50,7 +70,12 @@ export async function getNextCard(userId: string): Promise<CardDoc | null> {
   const user = await User.findOne({ uniqueUserId: userId })
     .select('_id themes')
     .lean<LeanUser>()
-  if (!user?.themes?.length) return null
+
+  // No DB record yet (brand-new guest) or no ThemeScores — serve a random card
+  if (!user?.themes?.length) {
+    const card = await fetchRandomCard()
+    return card ? toCardDoc(card) : null
+  }
 
   const themeScores = await ThemeScore.find({
     userId: user._id,
@@ -59,7 +84,10 @@ export async function getNextCard(userId: string): Promise<CardDoc | null> {
     .select('theme points seenCardIds')
     .lean<LeanThemeScore[]>()
 
-  if (!themeScores.length) return null
+  if (!themeScores.length) {
+    const card = await fetchRandomCard()
+    return card ? toCardDoc(card) : null
+  }
 
   const selectedTheme = selectTheme(
     themeScores.map(ts => ({ theme: ts.theme, points: ts.points }))
@@ -104,14 +132,5 @@ export async function getNextCard(userId: string): Promise<CardDoc | null> {
     generateCard(selectedTheme).catch(() => {})
   }
 
-  return {
-    _id: card._id.toString(),
-    theme: card.theme,
-    fact: card.fact,
-    sourceUrl: card.sourceUrl,
-    question: card.question,
-    options: card.options,
-    correctIndex: card.correctIndex,
-    explanation: card.explanation,
-  }
+  return toCardDoc(card)
 }
